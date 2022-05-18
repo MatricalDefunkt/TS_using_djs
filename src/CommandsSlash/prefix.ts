@@ -3,10 +3,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { Command, PrefixClient } from "../Types/interface";
 import { Client, CommandInteraction } from "discord.js";
-import fs from "fs";
-import path from "path";
 import { Prefix as PrefixDB } from "../Database/database";
-import { PrefixClientClass } from "../Bot";
 
 const data = new SlashCommandBuilder()
 	.setName("prefix")

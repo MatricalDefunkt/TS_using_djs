@@ -3,7 +3,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { MessageEmbed, Client, CommandInteraction } from "discord.js";
 import { Infractions } from "../Database/database";
-import { Command, PrefixClient } from "src/Types/interface.js";
+import { Command, PrefixClient } from "../Types/interface.js";
 import { Infraction } from "../Utils/Infraction";
 
 const data = new SlashCommandBuilder()

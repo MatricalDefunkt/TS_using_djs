@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import languageResponse from "../Utils/languagecodes.json";
 import translate from "@vitalets/google-translate-api";
-import { AutoCompleteCommand } from "src/Types/interface";
+import { AutoCompleteCommand } from "../Types/interface";
 
 const data = new SlashCommandBuilder()
 	.setName("translate")
