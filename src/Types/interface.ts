@@ -10,12 +10,12 @@ import {
 
 export interface Event {
 	name: string;
-	handle: (client: PrefixClient | Client) => void;
+	handle: (client: PrefixClient) => void;
 }
 
 export interface Command extends ChatInputApplicationCommandData {
 	jsonData: Object;
-	execute: (client: Client, interaction: CommandInteraction) => any;
+	execute: (client: PrefixClient, interaction: CommandInteraction) => any;
 }
 
 export interface AutoCompleteCommand extends Command {
