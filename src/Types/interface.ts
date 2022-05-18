@@ -25,3 +25,11 @@ export interface AutoCompleteCommand extends Command {
 export interface PrefixClient extends Client {
 	prefixes: Collection<string, string>;
 }
+
+export interface SubCommandParent extends Command {
+	children: SubCommand[];
+}
+
+export interface SubCommand extends Command {
+	parentName: string;
+}
