@@ -10,7 +10,7 @@ export const LogsClear: SubCommand = {
 	jsonData: {},
 	parentName: "logs",
 	execute: async (client: PrefixClient, interaction: CommandInteraction) => {
-		const caseID = interaction.options.getString("caseid");
+		const caseID = interaction.options.getString("caseid", true);
 
 		const caseToRemove = await Infractions.findOne({
 			where: { caseId: caseID },
@@ -34,43 +34,47 @@ export const LogsClear: SubCommand = {
 				? `Completed.`
 				: `<t:${caseToRemove.getDataValue("duration")}:F>`;
 
+		const embed = new MessageEmbed().setDescription(
+			`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+				type == "Note" ? `**Note**` : `**Reason**`
+			} - ${reason}\n**Time** - ${time}${
+				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
+			}`
+		);
+		embed.setColor(type === "Ban" ? "RED" : "YELLOW");
+
+		if (!embed)
+			return interaction.editReply({
+				content: `There was an error. Please check case ID.`,
+			});
+
 		await caseToRemove.destroy();
 
 		if (client.user) {
-			const embed = new MessageEmbed()
+			embed
 				.setAuthor({
 					name: client.user.tag,
 					iconURL: client.user?.displayAvatarURL(),
 				})
-				.setColor("YELLOW")
-				.setDescription(
-					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-						type == "Note" ? `**Note**` : `**Reason**`
-					} - ${reason}\n**Time** - ${time}${
-						duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-					}`
-				);
+				.setColor("YELLOW");
 			await interaction.editReply({
-				content: `Cleared case with ID \`${caseID}\` for ${target}`,
+				content: `Cleared case with ID \`${caseID}\` for <@${caseToRemove.getDataValue(
+					"targetID"
+				)}>`,
 				embeds: [embed],
 			});
 		} else {
-			const embed = new MessageEmbed()
+			embed
 				.setAuthor({
 					name: "PYL Bot#9640",
 					iconURL:
 						"https://cdn.discordapp.com/avatars/954655539546173470/cbead6c4dcc60a58d530f8eaf90de5e6.webp",
 				})
-				.setColor("YELLOW")
-				.setDescription(
-					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-						type == "Note" ? `**Note**` : `**Reason**`
-					} - ${reason}\n**Time** - ${time}${
-						duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-					}`
-				);
+				.setColor("YELLOW");
 			await interaction.editReply({
-				content: `Cleared case with ID \`${caseId}\` for ${target}`,
+				content: `Cleared case with ID \`${caseID}\` for ${caseToRemove.getDataValue(
+					"targetID"
+				)}>`,
 				embeds: [embed],
 			});
 		}

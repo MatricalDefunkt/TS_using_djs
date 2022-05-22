@@ -90,7 +90,7 @@ class Infraction {
 	 *
 	 * @returns {string} String of text which is made up of all the values an infraction provides.
 	 */
-	getInfractionText = async (): Promise<string | undefined> => {
+	getInfractionText = async (): Promise<string | Error | undefined> => {
 		const infraction = this.latestInfraction;
 		if (!infraction)
 			throw new Error(

@@ -29,8 +29,6 @@ export const LogsReason: SubCommand = {
 				content: `Infraction with the caseID of \`${caseID}\` does not exist.`,
 			});
 
-		const embed = new MessageEmbed();
-
 		const row = new MessageActionRow().addComponents([
 			new MessageButton()
 				.setCustomId("yeschange")
@@ -70,14 +68,39 @@ export const LogsReason: SubCommand = {
 			infraction.getDataValue("duration") === "Completed"
 				? `Completed.`
 				: `<t:${infraction.getDataValue("duration")}:F>`;
-		const description = `Case ID - ${caseId}\nType - ${type}\nTarget - ${target}\nModerator - ${mod}\n${
-			type == "Note" ? `Note` : `Reason`
-		} - ${reason}\nTime - ${time}`;
-		embed.setDescription(description);
+
+		const embed = new MessageEmbed().setDescription(
+			`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+				type == "Note" ? `**Note**` : `**Reason**`
+			} - ${reason}\n**Time** - ${time}${
+				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
+			}`
+		);
+
+		if (!client.user) return;
+
+		embed
+			.setColor(type === "Ban" ? "RED" : "YELLOW")
+			.setAuthor({
+				name: client.user.tag,
+				iconURL: client.user.displayAvatarURL(),
+			})
+			.setFooter({
+				iconURL: interaction.user.displayAvatarURL(),
+				text: interaction.user.tag,
+			})
+			.setTimestamp();
+
+		if (!embed)
+			return interaction.editReply({
+				content: `There was an error. Please check the case ID.`,
+			});
 
 		const reply = await interaction.editReply({
 			content: `Are you sure you want to ${
-				reason === "None provided." ? `set` : `change`
+				infraction.getDataValue("reason") === "None provided."
+					? `set`
+					: `change`
 			} the reason to \`${newReason}\``,
 			embeds: [embed],
 			components: [row],
