@@ -15,12 +15,12 @@
 		"allowSyntheticDefaultImports": true,
 		"resolveJsonModule": true,
 		"forceConsistentCasingInFileNames": true,
-		"removeComments": true,
+		"removeComments": false,
 		"typeRoots": ["node_modules/@types"],
 		"sourceMap": false,
 		"baseUrl": "./"
 	},
 	"files": ["src/Bot.ts"],
 	"include": ["./**/*.ts"],
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist", ".vscode"]
 }
