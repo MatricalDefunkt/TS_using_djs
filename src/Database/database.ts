@@ -2,6 +2,7 @@
 
 import { Sequelize, DataTypes, Model } from "sequelize";
 import * as dotenv from "dotenv";
+import { MessageEmbed } from "discord.js";
 dotenv.config();
 
 if (

@@ -2,206 +2,121 @@
 
 import { Infractions } from "../Database/database";
 import uniqid from "uniqid";
+import { MessageEmbed } from "discord.js";
 
 class Infraction {
-	note: Infractions | undefined;
-	warn: Infractions | undefined;
-	tempMute: Infractions | undefined;
-	tempBan: Infractions | undefined;
-	convertMute: Infractions | undefined;
-	convertBan: Infractions | undefined;
-	kick: Infractions | undefined;
-	mute: Infractions | undefined;
-	ban: Infractions | undefined;
-	unMute: Infractions | undefined;
-	unban: Infractions | undefined;
+	latestInfraction: Infractions | Error | undefined;
 
 	constructor() {
-		this.note;
-		this.warn;
-		this.tempMute;
-		this.tempBan;
-		this.convertMute;
-		this.convertBan;
-		this.kick;
-		this.mute;
-		this.ban;
-		this.unMute;
-		this.unban;
+		this.latestInfraction;
 	}
-	async addNote(
-		moderatorId: string,
-		target: string,
-		_note: string
-	): Promise<Infractions | Error> {
-		const note = await Infractions.create({
-			caseID: uniqid("note--"),
-			type: "Note",
-			targetID: target,
-			modID: moderatorId,
-			reason: _note,
+
+	async addInfraction({
+		modID,
+		target: targetID,
+		reason,
+		oldType,
+		type,
+		duration,
+	}: {
+		modID: string;
+		target: string;
+		reason: string;
+		type:
+			| "Note"
+			| "Warn"
+			| "TempMute"
+			| "Mute"
+			| "Kick"
+			| "TempBan"
+			| "Ban"
+			| "UnMute"
+			| "ConvertMute"
+			| "UnBan"
+			| "ConvertBan";
+		newType?: "TempMute" | "Mute" | "TempBan" | "Ban";
+		oldType?: "TempMute" | "Mute" | "TempBan" | "Ban";
+		duration?: string;
+	}): Promise<Infractions | Error> {
+		const infraction = await Infractions.create({
+			caseID: uniqid(`${type.toLowerCase()}--`),
+			type: oldType ? `${oldType} => ${type}` : type,
+			targetID,
+			modID,
+			reason,
+			duration: duration ? duration : null,
 		}).catch((error) => console.log(error));
-		if (note) return (this.note = note);
+		if (infraction) {
+			this.latestInfraction = infraction;
+		}
 		return Error("Unable to create. Check console for more.");
 	}
-	async addBan(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const ban = await Infractions.create({
-			caseID: uniqid("ban--"),
-			type: "Ban",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (ban) return (this.ban = ban);
-		return Error("Unable to create. Check console for more.");
-	}
-	async addUnBan(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const unban = await Infractions.create({
-			caseID: uniqid("unban--"),
-			type: "Unban",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (unban) this.unban = unban;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addTempBan(
-		moderatorId: string,
-		target: string,
-		reason: string,
-		duration: number
-	): Promise<Infractions | Error> {
-		const tempBan = await Infractions.create({
-			caseID: uniqid("tempban--"),
-			type: "TempBan",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-			duration: String(duration),
-		}).catch((error) => console.log(error));
-		if (tempBan) this.tempBan = tempBan;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addTempMute(
-		moderatorId: string,
-		target: string,
-		reason: string,
-		duration: number
-	): Promise<Infractions | Error> {
-		const tempMute = await Infractions.create({
-			caseID: uniqid("tempmute--"),
-			type: "TempMute",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-			duration: String(duration),
-		}).catch((error) => console.log(error));
-		if (tempMute) this.tempMute = tempMute;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addConvertBan(
-		moderatorId: string,
-		target: string,
-		reason: string,
-		oldType: string,
-		newType: string,
-		newDuration: string
-	): Promise<Infractions | Error> {
-		const convertBan = await Infractions.create({
-			caseID: uniqid("convertban--"),
-			type: `${oldType} => ${newType}`,
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-			duration: newDuration,
-		}).catch((error) => console.log(error));
-		if (convertBan) this.convertBan = convertBan;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addKick(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const kick = await Infractions.create({
-			caseID: uniqid("kick--"),
-			type: "Kick",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (kick) this.kick = kick;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addWarn(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const warn = await Infractions.create({
-			caseID: uniqid("warn--"),
-			type: "Warn",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (warn) this.warn = warn;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addUnMute(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const unMute = await Infractions.create({
-			caseID: uniqid("unmute--"),
-			type: "UnMute",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (unMute) this.unMute = unMute;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addMute(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const mute = await Infractions.create({
-			caseID: uniqid("mute--"),
-			type: "mute",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (mute) this.mute = mute;
-		return Error("Unable to create. Check console for more.");
-	}
-	async addConvertMute(
-		moderatorId: string,
-		target: string,
-		reason: string
-	): Promise<Infractions | Error> {
-		const convertMute = await Infractions.create({
-			caseID: uniqid("convertmute--"),
-			type: "ConvertMute",
-			targetID: target,
-			modID: moderatorId,
-			reason: reason,
-		}).catch((error) => console.log(error));
-		if (convertMute) this.convertMute = convertMute;
-		return Error("Unable to create. Check console for more.");
-	}
+	/**
+	 *
+	 * @returns {MessageEmbed} Message embed with the description as the case data.
+	 */
+	getInfractionEmbed = async (): Promise<MessageEmbed | Error | undefined> => {
+		const infraction = this.latestInfraction;
+		if (!infraction)
+			throw new Error(
+				"Infraction has not been created yet. Use <Infraction>.addInfraction"
+			);
+		if (infraction instanceof Error) return infraction;
+		const caseId = infraction.getDataValue("caseID");
+		const type = infraction.getDataValue("type");
+		const target = `<@${infraction.getDataValue("targetID")}>`;
+		const mod = `<@${infraction.getDataValue("modID")}>`;
+		const reason = infraction.getDataValue("reason");
+		const time = `<t:${Math.trunc(
+			Date.parse(infraction.getDataValue("createdAt")) / 1000
+		)}:F>`;
+		const duration =
+			infraction.getDataValue("duration") === "Completed"
+				? `Completed.`
+				: `<t:${infraction.getDataValue("duration")}:F>`;
+
+		const embed = new MessageEmbed().setDescription(
+			`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+				type == "Note" ? `**Note**` : `**Reason**`
+			} - ${reason}\n**Time** - ${time}${
+				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
+			}`
+		);
+		embed.setColor(type === "Ban" ? "RED" : "YELLOW");
+		return embed;
+	};
+
+	/**
+	 *
+	 * @returns {string} String of text which is made up of all the values an infraction provides.
+	 */
+	getInfractionText = async (): Promise<string | undefined> => {
+		const infraction = this.latestInfraction;
+		if (!infraction)
+			throw new Error(
+				"Infraction has not been created yet. Use <Infraction>.addInfraction"
+			);
+		if (infraction instanceof Error) return infraction;
+		const caseId = infraction.getDataValue("caseID");
+		const type = infraction.getDataValue("type");
+		const target = `<@${infraction.getDataValue("targetID")}>`;
+		const mod = `<@${infraction.getDataValue("modID")}>`;
+		const reason = infraction.getDataValue("reason");
+		const time = `<t:${Math.trunc(
+			Date.parse(infraction.getDataValue("createdAt")) / 1000
+		)}:F>`;
+		const duration =
+			infraction.getDataValue("duration") === "Completed"
+				? `Completed.`
+				: `<t:${infraction.getDataValue("duration")}:F>`;
+
+		const text = `**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+			type == "Note" ? `**Note**` : `**Reason**`
+		} - ${reason}\n**Time** - ${time}${
+			duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
+		}`;
+		return text;
+	};
 }
 
 export { Infraction };
