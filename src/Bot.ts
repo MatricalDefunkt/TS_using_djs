@@ -159,7 +159,7 @@ client.once("ready", async () => {
 					0
 				)} members, at the moment, and command prefix \`${client.prefixes.get(
 					"command"
-				)}\`, along with command prefix of \`${client.prefixes.get(
+				)}\`, along with tag prefix of \`${client.prefixes.get(
 					"tag"
 				)}\` at <t:${Math.trunc(
 					client.readyTimestamp ? client.readyTimestamp / 1000 : 0
