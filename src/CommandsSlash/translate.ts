@@ -59,6 +59,17 @@ export const Translate: AutoCompleteCommand = {
 		const langToIso = interaction.options.getString("language-to", true);
 		const langFromIso = interaction.options.getString("language-from", true);
 
+		if (
+			!languageResponse.find((lang) => lang.value === langToIso) ||
+			!languageResponse.find((lang) => lang.value === langFromIso)
+		) {
+			await interaction.deleteReply();
+			return interaction.followUp({
+				content: `Please use only the options provided to you. Other languages are not supported.`,
+				ephemeral: true,
+			});
+		}
+
 		try {
 			const result = await translate(text, {
 				to: langToIso,
