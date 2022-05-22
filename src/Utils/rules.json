@@ -1,0 +1,79 @@
+{
+	"rules": [
+		{
+			"id": 101,
+			"rule": "We expect all members of the community to follow Discord's terms of service, including the age limitations. If you are under the age of 13, you should not be using this website! Terms of service violations will result in an instantaneous ban. If you are interested in reading the ToS for yourself, here is a link: https://discord.com/terms.",
+			"reason": "Violation of Discord ToS."
+		},
+		{
+			"id": 102,
+			"rule": "This server is meant to be an inclusive and welcoming environment for language learners from all over the world. Therefore, we prioritize the comfort of our community members. Any sort of suspicious behavior by a user that makes community members feel unsafe or uncomfortable, even in DMs, will be taken action against. We take harassment seriously. Racist, sexist, homophobic, transphobic, xenophobic, or violent and/or threatening comments will not be tolerated. This includes using racial slurs, even as a 'joke'.",
+			"reason": "Harassment and/or non-inclusive behaviour."
+		},
+		{
+			"id": 103,
+			"rule": "Inappropriate language, including swearing, is allowed but should be kept to a minimum. However, excessive and prolonged swearing, especially if directed towards or at another member of the community, will be taken action against.",
+			"reason": "Extreme and/or directed profanity."
+		},
+		{
+			"id": 104,
+			"rule": "Self-Advertising on this server is prohibited, even through Direct Message, unless permission has been given prior. This includes sending other Discord server invites, streaming, social media, and YouTube channel links. However, permission can be given if a staff member is contacted.",
+			"reason": "Self-advertisement and/or scam."
+		},
+		{
+			"id": 105,
+			"rule": "Spamming and disruptive behavior is prohibited—this includes sending the same or similar messages in a chat over and over again, general trolling, pinging community members repeatedly, and disruption of the current conversation topic in order to attract attention. This also include excessive use of CAPITAL LETTERS as a means of gaining attention.",
+            "reason": "General disruptive behaviour such as spam trolling, and useless pings."
+		},
+		{
+			"id": 106,
+			"rule": "This is a SFW server, meaning that inappropriate, sexual, and offensive content is prohibited; even if it is meant lightheartedly.",
+            "reason": "NSFW content."
+		},
+		{
+			"id": 107,
+			"rule": "This is an international server, and thus we have people from all different cultures and backgrounds. Thus, we ask community members to be respectful and mindful of this. Rude and provocative comments based on anyone's culture, background, religion, or personal opinions will not be tolerated.",
+            "reason": "Unwelcome comments on one's origin / ethnicity / religion / personal - choices."
+		},
+		{
+			"id": 108,
+			"rule": "This server is not subject to your definition of 'fairness'. Arguing with staff members will reduce the probability of having your punishment appealed. Please respect their decisions, as they are working hard to make this a safe and inclusive server for everyone!",
+            "reason": "Disruptive and unwanted drama led to severe punishment."
+		},
+		{
+			"id": 201,
+			"rule": "The general server rules apply to voice chats as well. If a member is to break a general rule which can apply to a voice chat, similar consequences shall be applicable.",
+            "reason": "Did not follow General Rules (Any) [VC]"
+		},
+		{
+			"id": 202,
+			"rule": "Please aim to use the correct language for a language-specific voice channel (for example, Spanish in the <#933210086648729631>) channel as much as possible. General voice channels do not have a set language, so if you intend on speaking in multiple languages, a general channel would be the best place to talk!",
+            "reason": "Did not use correct languages for the correct voice channel. [VC]"
+		},
+		{
+			"id": 203,
+			"rule": "Please be polite to others in the voice call with you at all times. Try not to interrupt for speak over people who are practicing a new language, and make sure that everyone has the chance to be heard. Repeated and excessive interruption for the purpose of seeking attention is grounds for a VC Mute",
+            "reason": "General disrespectful and annoying behaviour. [VC]"
+		},
+		{
+			"id": 204,
+			"rule": "Do not make fun of people's accents or the way they speak. Remember, many of us are new to our languages! This is considered rude behavior.",
+            "reason": "Making fun of people's way of speaking. [VC]"
+		},
+		{
+			"id": 205,
+			"rule": "Please refrain from saying things that could be taken as offensive. Try to make everyone in the call feel comfortable and included. Making offensive comments or comments that make other community members feel uncomfortable is grounds will be taken action against.",
+            "reason": "General offensive behavior / comments. [VC]"
+		},
+		{
+			"id": 206,
+			"rule": "You will notice \"speaking text channels\" (<#933210533358882816>) above some of the language specific voice channels. These are for the purpose of people following along with the active call but are unable to speak. If you are not actively following the call, please refrain from using these channels and interrupting people that are actively using them.",
+            "reason": "Disruption in speaking-text-channels. [VC]"
+		},
+		{
+			"id": 207,
+			"rule": "This server is not subject to your definition of 'fairness'. The staff have final say in all matters, and please respect their opinions!",
+            "reason": "Disruptive and unwanted drama led to severe punishment. [VC]"
+		}
+	]
+}
