@@ -184,6 +184,12 @@ export const Warn: Command = {
 								content: `There was an error. Please contact Matrical ASAP`,
 							});
 						}
+						if (embed instanceof Error) {
+							console.error(embed);
+							interaction.editReply({
+								content: `There was an error. Please contact Matrical ASAP.`,
+							});
+						}
 						const isError = (x: any): x is Error => {
 							if (x instanceof Error) return true;
 							return false;
@@ -195,18 +201,26 @@ export const Warn: Command = {
 							});
 						}
 
+						if (!embed || !client.user) {
+							console.log(`Could not create embed.`);
+							return interaction.editReply({
+								content: `There was an error. Please contact Matrical ASAP.`,
+							});
+						}
+
 						if (!client.user) return;
+
 						embed
 							.setAuthor({
 								name: client.user.tag,
-								iconURL: client.user?.displayAvatarURL(),
+								iconURL: client.user.displayAvatarURL(),
 							})
-							.setColor("YELLOW")
 							.setFooter({
 								iconURL: interaction.user.displayAvatarURL(),
 								text: interaction.user.tag,
 							})
 							.setTimestamp();
+						await interaction.editReply({ embeds: [embed] });
 						await interaction.editReply({ content: `Saved.`, embeds: [embed] });
 					} catch (rejectedReason) {
 						interaction.editReply({
