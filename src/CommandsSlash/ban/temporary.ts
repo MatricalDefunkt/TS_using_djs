@@ -1,9 +1,10 @@
 /** @format */
 
-import { Client, CommandInteraction, MessageEmbed } from "discord.js";
+import { CommandInteraction, MessageEmbed } from "discord.js";
+import { Op } from "sequelize";
+import { Infractions } from "../../Database/database";
 import { SubCommand, PrefixClient } from "../../Types/interface";
-import { Infractions, Prefix } from "../../Database/database";
-import { Infraction } from "../../Utils/Infraction.js";
+import { Infraction } from "../../Utils/Infraction";
 import { rules } from "../../Utils/rules.json";
 
 export const BanTemporary: SubCommand = {
@@ -18,50 +19,58 @@ export const BanTemporary: SubCommand = {
 	): Promise<any> => {
 		if (!interaction.inCachedGuild()) return;
 
-		await interaction.deferReply({ ephemeral: true });
 		const bannee = interaction.options.getMember("user", true);
 		let _reason = interaction.options.getInteger("reason", true);
 		const time = interaction.options.getInteger("msg-history", true);
 		const _duration = interaction.options.getString("duration", true);
+		const customReason = interaction.options.getString("custom-reason");
 
-		const durationRegEx = new RegExp(/\d+(?<![wdh])/gi);
+		const durationTimeRegEx = new RegExp(/\d+(?<![wdh])/gi);
+		const durationTypeRegEx = new RegExp(/[wdh]/gi);
 
-		const durationArray = _duration.match(durationRegEx);
+		const durationArray = _duration.match(durationTimeRegEx);
 
-		if (!durationArray || durationArray.length < 1)
+		const durationTypes = _duration.match(durationTypeRegEx);
+
+		if (
+			!durationArray ||
+			durationArray.length < 1 ||
+			!durationTypes ||
+			durationTypes.length < 1 ||
+			durationTypes.length !== durationArray.length
+		)
 			return interaction.editReply({
-				content: `Invalid arguements for \`duration\`. Please input duration in the format of \`xW xD xH\`.`,
+				content: `Invalid arguements for \`duration\`. Please input duration in the format of \`xW xD xH\`.${
+					customReason
+						? `\nHere is your custom reason for your reference:\n${customReason}`
+						: ``
+				}`,
 			});
+
+		const durationMap = new Map<string, string>();
+
+		for (const durationType of durationTypes) {
+			const index = durationTypes.findIndex((t) => t === durationType);
+			durationMap.set(durationType.toLowerCase(), durationArray[index]);
+		}
 
 		let durationTimestamp: number;
 
-		//TODO: Integrate RegExp
-
-		const timeArgs = _duration.toLowerCase().split(" ");
-		let weeks = timeArgs.find((arg) => arg.includes("w"));
-		let days = timeArgs.find((arg) => arg.includes("d"));
-		let hours = timeArgs.find((arg) => arg.includes("h"));
-
-		if (!weeks && !days && !hours)
-			return interaction.editReply({
-				content: `Invalid arguements for \`duration\`. Please input duration in the format of \`xW xD xH\`.`,
-			});
-
-		if (!weeks) {
-			weeks = "0w";
-		}
-		if (!days) {
-			days = "0d";
-		}
-		if (!hours) {
-			hours = "0h";
-		}
-
-		const duration = {
-			weeks: parseInt(weeks.replace("w", "")),
-			days: parseInt(days.replace("d", "")),
-			hours: parseInt(hours.replace("h", "")),
+		let duration = {
+			weeks: 0,
+			days: 0,
+			hours: 0,
 		};
+
+		function getTime(x: string): number {
+			const timeString = durationMap.get(x);
+			if (!timeString) return 0;
+			return parseInt(timeString);
+		}
+
+		duration.weeks = getTime("w");
+		duration.days = getTime("d");
+		duration.hours = getTime("h");
 
 		if (duration.days < 1 && duration.weeks < 1 && duration.hours < 1)
 			return interaction.editReply({
@@ -87,27 +96,31 @@ export const BanTemporary: SubCommand = {
 			});
 		}
 
-		const getRule = (reasonID: number) => {
-			return rules.find((rule) => rule.id == reasonID);
-		};
+		let reason: { id: number; reason: string; rule: string };
 
-		let reason;
+		const foundRule = rules.find((rule) => rule.id == _reason);
 
-		if (_reason == 0) {
+		if (_reason === 0) {
 			reason = {
 				id: 0,
-				rule: interaction.options.getString("custom-reason"),
-				reason: interaction.options.getString("custom-reason").slice(0, 256),
+				reason: customReason ? customReason : "None provided.",
+				rule: customReason ? customReason : "None provided.",
 			};
-			if (!reason) {
-				reason = {
-					id: 0,
-					rule: "None provided.",
-					reason: "None provided.",
-				};
-			}
 		} else {
-			reason = getRule(_reason);
+			reason = foundRule
+				? foundRule
+				: { id: 404, rule: "Not found.", reason: "Not found." };
+		}
+
+		if (reason.id === 404) {
+			console.log(
+				"Rule with id" +
+					_reason +
+					"was not found. Please check rules.json asap."
+			);
+			return interaction.editReply({
+				content: `There was an error. Please contact Matrical ASAP.`,
+			});
 		}
 
 		const disputable = interaction.options.getBoolean("disputable");
@@ -119,34 +132,123 @@ export const BanTemporary: SubCommand = {
 			disputableReply = `Since this ban has been set as disputable, you may join [this](https://discord.gg/UEwR4CUrug) server and dispute the ban there.`;
 		}
 
-		try {
-			const dmChannel = await bannee.createDM(true);
-			dmChannel
-				.send({
-					content: `Message from Practice Your Language:`,
-					embeds: [
-						new MessageEmbed()
-							.setAuthor({
-								name: client.user.tag,
-								iconURL: client.user.avatarURL({ size: 512 }),
+		if (!client.user) return;
+
+		const oldTempBan = await Infractions.findOne({
+			where: { targetID: bannee.id, duration: { [Op.ne]: `Completed` } },
+		});
+
+		if (!oldTempBan) {
+			try {
+				const dmChannel = await bannee.createDM(true);
+				dmChannel
+					.send({
+						content: `Message from Practice Your Language:`,
+						embeds: [
+							new MessageEmbed()
+								.setAuthor({
+									name: client.user.tag,
+									iconURL: client.user.displayAvatarURL({ size: 512 }),
+								})
+								.setColor("RED")
+								.setDescription("A message from PYL staff:")
+								.addField(
+									"Message:",
+									"You have been `TEMPORARILY` banned from PYL for breaking (a) server rule(s)\nThe ban will expire in"
+								)
+								.addField("Rule:", reason.rule)
+								.addField("Dispute:", disputableReply)
+								.addField(
+									"Duration:",
+									`You will be unbanned in <t:${durationTimestamp}:R>`
+								),
+						],
+					})
+					.then(() => {
+						interaction.editReply({
+							content: `${bannee} has recieved the ban message.\nBanning now...`,
+						});
+						bannee
+							.ban({
+								days: time,
+								reason: `${interaction.user.tag} || ${reason.reason}`,
 							})
-							.setColor("RED")
-							.setDescription("A message from PYL staff:")
-							.addField(
-								"Message:",
-								"You have been `TEMPORARILY` banned from PYL for breaking (a) server rule(s)\nThe ban will expire in"
-							)
-							.addField("Rule:", reason.rule)
-							.addField("Dispute:", disputableReply)
-							.addField(
-								"Duration:",
-								`You will be unbanned in <t:${durationTimestamp}:R>`
-							),
-					],
-				})
-				.then(() => {
-					interaction.editReply({
-						content: `${bannee} has recieved the ban message.\nBanning now...`,
+							.then(async () => {
+								await interaction.editReply({
+									content: `${bannee} has been banned. They will be unbanned <t:${durationTimestamp}:R>`,
+								});
+								const infraction = new Infraction();
+								await infraction.addInfraction({
+									modID: interaction.user.id,
+									target: bannee.user.id,
+									reason: reason.reason,
+									type: "TempBan",
+									duration: String(durationTimestamp),
+								});
+
+								if (infraction instanceof Error || !infraction.latestInfraction)
+									return interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP.`,
+									});
+
+								const embed = await infraction.getInfractionEmbed();
+								if (!embed) {
+									console.log(
+										"Could not make an embed with case ID. Please check."
+									);
+									return interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP`,
+									});
+								}
+								if (embed instanceof Error) {
+									console.error(embed);
+									interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP.`,
+									});
+								}
+								const isError = (x: any): x is Error => {
+									if (x instanceof Error) return true;
+									return false;
+								};
+								if (isError(embed)) {
+									console.error(embed);
+									return interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP.`,
+									});
+								}
+
+								if (!embed || !client.user) {
+									console.log(`Could not create embed.`);
+									return interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP.`,
+									});
+								}
+
+								if (!client.user) return;
+
+								embed
+									.setAuthor({
+										name: client.user.tag,
+										iconURL: client.user.displayAvatarURL(),
+									})
+									.setFooter({
+										iconURL: interaction.user.displayAvatarURL(),
+										text: interaction.user.tag,
+									})
+									.setTimestamp();
+								await interaction.editReply({ embeds: [embed] });
+							})
+							.catch((rejectedReason) => {
+								interaction.editReply({
+									content: `Something went wrong. Please contact Matrical ASAP.`,
+								});
+								console.log(rejectedReason);
+							});
+					});
+			} catch (e: any) {
+				if (e.code === 50007) {
+					await interaction.editReply({
+						content: `Cannot send messages to ${bannee}\nBanning now...`,
 					});
 					bannee
 						.ban({
@@ -154,39 +256,65 @@ export const BanTemporary: SubCommand = {
 							reason: `${interaction.user.tag} || ${reason.reason}`,
 						})
 						.then(async () => {
-							await interaction.editReply({
+							interaction.editReply({
 								content: `${bannee} has been banned. They will be unbanned <t:${durationTimestamp}:R>`,
 							});
 							const infraction = new Infraction();
-							await infraction.addTempBan(
-								interaction.user.id,
-								bannee.user.id,
-								reason.reason,
-								durationTimestamp
-							);
-							const dbcaseId = infraction.tempBan.getDataValue("caseID");
-							const dbtype = infraction.tempBan.getDataValue("type");
-							const dbtarget = `<@${infraction.tempBan.getDataValue(
-								"targetID"
-							)}>`;
-							const dbmod = `<@${infraction.tempBan.getDataValue("modID")}>`;
-							const dbreason = infraction.tempBan.getDataValue("reason");
-							const dbtime = `<t:${Math.trunc(
-								Date.parse(infraction.tempBan.getDataValue("createdAt")) / 1000
-							)}:F>`;
-							const dbduration = infraction.tempBan.getDataValue("duration");
+							await infraction.addInfraction({
+								modID: interaction.user.id,
+								target: bannee.user.id,
+								reason: reason.reason,
+								type: "TempBan",
+								duration: String(durationTimestamp),
+							});
 
-							const embed = new MessageEmbed()
+							if (infraction instanceof Error || !infraction.latestInfraction)
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+
+							const embed = await infraction.getInfractionEmbed();
+							if (!embed) {
+								console.log(
+									"Could not make an embed with case ID. Please check."
+								);
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP`,
+								});
+							}
+							if (embed instanceof Error) {
+								console.error(embed);
+								interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+							}
+							const isError = (x: any): x is Error => {
+								if (x instanceof Error) return true;
+								return false;
+							};
+							if (isError(embed)) {
+								console.error(embed);
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+							}
+
+							if (!embed || !client.user) {
+								console.log(`Could not create embed.`);
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+							}
+
+							if (!client.user) return;
+
+							embed
 								.setAuthor({
 									name: client.user.tag,
-									iconURL: client.user.avatarURL(),
+									iconURL: client.user.displayAvatarURL(),
 								})
-								.setColor("YELLOW")
-								.setDescription(
-									`**Case ID -** ${dbcaseId}\n**Type -** ${dbtype}\n**Target -** ${dbtarget}\n**Moderator -** ${dbmod}\n**Reason -** ${dbreason}\n**Time -** ${dbtime}\n**End-Time** - <t:${dbduration}:F>`
-								)
 								.setFooter({
-									iconURL: interaction.user.avatarURL(),
+									iconURL: interaction.user.displayAvatarURL(),
 									text: interaction.user.tag,
 								})
 								.setTimestamp();
@@ -198,74 +326,14 @@ export const BanTemporary: SubCommand = {
 							});
 							console.log(rejectedReason);
 						});
-				});
-		} catch (e) {
-			if (e.code === 50007) {
-				await interaction.editReply({
-					content: `Cannot send messages to ${bannee}\nBanning now...`,
-				});
-				bannee
-					.ban({
-						days: time,
-						reason: `${interaction.user.tag} || ${reason.reason}`,
-					})
-					.then(async () => {
-						interaction.editReply({
-							content: `${bannee} has been banned. They will be unbanned <t:${durationTimestamp}:R>`,
-						});
-						const infraction = new Infraction();
-						await infraction.addTempBan(
-							interaction.user.id,
-							bannee.user.id,
-							reason.reason,
-							durationTimestamp
-						);
-						const dbcaseId = infraction.tempBan.getDataValue("caseID");
-						const dbtype = infraction.tempBan.getDataValue("type");
-						const dbtarget = `<@${infraction.tempBan.getDataValue(
-							"targetID"
-						)}>`;
-						const dbmod = `<@${infraction.tempBan.getDataValue("modID")}>`;
-						const dbreason = infraction.tempBan.getDataValue("reason");
-						const dbtime = `<t:${Math.trunc(
-							Date.parse(infraction.tempBan.getDataValue("createdAt")) / 1000
-						)}:F>`;
-						const dbduration = infraction.tempBan.getDataValue("duration");
-
-						const embed = new MessageEmbed()
-							.setAuthor({
-								name: client.user.tag,
-								iconURL: client.user.avatarURL(),
-							})
-							.setColor("YELLOW")
-							.setDescription(
-								`**Case ID -** ${dbcaseId}\n**Type -** ${dbtype}\n**Target -** ${dbtarget}\n**Moderator -** ${dbmod}\n**Reason -** ${dbreason}\n**Time -** ${dbtime}\n**End-Time** - <t:${dbduration}:F>`
-							)
-							.setFooter({
-								iconURL: interaction.user.id,
-								text: interaction.user.tag,
-							})
-							.setTimestamp();
-						await interaction.editReply({ embeds: [embed] });
-					})
-					.catch((rejectedReason) => {
-						interaction.editReply({
-							content: `Something went wrong. Please contact Matrical ASAP.`,
-						});
-						console.log(rejectedReason);
-					});
-			} else if (error.name === "SequelizeUniqueConstraintError") {
-				const oldBannee = await tempInfractions.findOne({
-					where: { userID: bannee.id },
-				});
-				return interaction.editReply({
-					content: `${bannee} already has a pending temp-ban, ending <t:${oldBannee.getDataValue(
-						"finishTimeStamp"
-					)}:R>, on <t:${oldBannee.getDataValue("finishTimeStamp")}:F>.`,
-				});
-			} else {
-				console.error(e);
+				}
 			}
+		} else {
+			return interaction.editReply({
+				content: `${bannee} already has a remaining temp ban, which ends on <t:${oldTempBan.getDataValue(
+					"duration"
+				)}:F>. Please use /ban convert if you would like to convert the ban.`,
+			});
 		}
 	},
 };
