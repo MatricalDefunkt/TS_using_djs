@@ -82,7 +82,7 @@ class Infraction {
 				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
 			}`
 		);
-		embed.setColor(type === "Ban" ? "RED" : "YELLOW");
+		embed.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW");
 		return embed;
 	};
 
