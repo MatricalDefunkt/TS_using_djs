@@ -36,40 +36,60 @@ export const Note: Command = {
 		const note = interaction.options.getString("note", true);
 
 		const infraction = new Infraction();
-		await infraction.addNote(interaction.user.id, userForNote.id, note);
-		if (infraction.note instanceof Infractions) {
-			const dbcaseId = infraction.note.getDataValue("caseID");
-			const dbtype = infraction.note.getDataValue("type");
-			const dbtarget = `<@${infraction.note.getDataValue("targetID")}>`;
-			const dbmod = `<@${infraction.note.getDataValue("modID")}>`;
-			const dbreason = infraction.note.getDataValue("reason");
-			const dbtime = `<t:${Math.trunc(
-				Date.parse(infraction.note.getDataValue("createdAt")) / 1000
-			)}:F>`;
-
-			if (!client.user)
-				throw new TypeError('client.user is of the type "UNDEFINED"');
-
-			const embed = new MessageEmbed()
-				.setAuthor({
-					name: client.user.tag,
-					iconURL: client.user?.displayAvatarURL(),
-				})
-				.setColor("YELLOW")
-				.setDescription(
-					`**Case ID -** ${dbcaseId}\n**Type -** ${dbtype}\n**Target -** ${dbtarget}\n**Moderator -** ${dbmod}\n**Reason -** ${dbreason}\n**Time -** ${dbtime}`
-				)
-				.setFooter({
-					iconURL: interaction.user.displayAvatarURL(),
-					text: interaction.user.tag,
-				})
-				.setTimestamp();
-			await interaction.editReply({ embeds: [embed] });
-			return;
-		} else {
+		await infraction.addInfraction({
+			modID: interaction.user.id,
+			target: userForNote.id,
+			reason: note,
+			type: "Note",
+		});
+		if (infraction instanceof Error || !infraction.latestInfraction)
 			return interaction.editReply({
-				content: `Could not create entry in database. This is an error. Please contact Matrical ASAP.`,
+				content: `There was an error. Please contact Matrical ASAP.`,
+			});
+
+		const embed = await infraction.getInfractionEmbed();
+		if (!embed) {
+			console.log("Could not make an embed with case ID. Please check.");
+			return interaction.editReply({
+				content: `There was an error. Please contact Matrical ASAP`,
 			});
 		}
+		if (embed instanceof Error) {
+			console.error(embed);
+			interaction.editReply({
+				content: `There was an error. Please contact Matrical ASAP.`,
+			});
+		}
+		const isError = (x: any): x is Error => {
+			if (x instanceof Error) return true;
+			return false;
+		};
+		if (isError(embed)) {
+			console.error(embed);
+			return interaction.editReply({
+				content: `There was an error. Please contact Matrical ASAP.`,
+			});
+		}
+
+		if (!embed || !client.user) {
+			console.log(`Could not create embed.`);
+			return interaction.editReply({
+				content: `There was an error. Please contact Matrical ASAP.`,
+			});
+		}
+
+		if (!client.user) return;
+
+		embed
+			.setAuthor({
+				name: client.user.tag,
+				iconURL: client.user.displayAvatarURL(),
+			})
+			.setFooter({
+				iconURL: interaction.user.displayAvatarURL(),
+				text: interaction.user.tag,
+			})
+			.setTimestamp();
+		await interaction.editReply({ embeds: [embed] });
 	},
 };
