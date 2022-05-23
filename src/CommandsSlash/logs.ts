@@ -115,7 +115,7 @@ export const Logs: SubCommandParent = {
 			try {
 				await subCommand.execute(client, interaction);
 				return;
-			} catch (e) {
+			} catch (e: any) {
 				await interaction.editReply({
 					content: "There was an error. Please contact Matrical ASAP",
 				});
