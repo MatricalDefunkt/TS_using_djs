@@ -2,7 +2,7 @@
 
 import { Client, CommandInteraction, MessageEmbed } from "discord.js";
 import { PrefixClient, SubCommand } from "../../Types/interface.js";
-import { Infraction } from "../../Utils/Infraction.js";
+import { Infraction } from "../../Utils/Infraction";
 import { rules } from "../../Utils/rules.json";
 
 export const BanPermanant: SubCommand = {
@@ -112,6 +112,7 @@ export const BanPermanant: SubCommand = {
 								reason: reason.reason,
 								type: "Ban",
 							});
+
 							if (infraction instanceof Error || !infraction.latestInfraction)
 								return interaction.editReply({
 									content: `There was an error. Please contact Matrical ASAP.`,
@@ -142,13 +143,21 @@ export const BanPermanant: SubCommand = {
 									content: `There was an error. Please contact Matrical ASAP.`,
 								});
 							}
+
+							if (!embed || !client.user) {
+								console.log(`Could not create embed.`);
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+							}
+
 							if (!client.user) return;
+
 							embed
 								.setAuthor({
 									name: client.user.tag,
 									iconURL: client.user.displayAvatarURL(),
 								})
-								.setColor("YELLOW")
 								.setFooter({
 									iconURL: interaction.user.displayAvatarURL(),
 									text: interaction.user.tag,

@@ -14,7 +14,6 @@ import {
 import { Op, col } from "sequelize";
 import { PrefixClient, SubCommand } from "../../Types/interface";
 import { Infractions } from "../../Database/database";
-import { Infraction } from "../../Utils/Infraction.js";
 
 export const BanConvert: SubCommand = {
 	name: "convert",

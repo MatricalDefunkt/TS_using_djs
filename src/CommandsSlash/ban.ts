@@ -7,9 +7,17 @@ import {
 	CommandInteraction,
 	Collection,
 } from "discord.js";
-import path from "path";
-import fs from "fs";
-import { PrefixClient, SubCommandParent } from "src/Types/interface";
+import {
+	PrefixClient,
+	SubCommand,
+	SubCommandParent,
+} from "src/Types/interface";
+import { BanSubCommands } from "./ban/exports";
+
+const subCommands: Collection<string, SubCommand> = new Collection();
+BanSubCommands.forEach((subCommand: SubCommand) => {
+	subCommands.set(subCommand.name, subCommand);
+});
 
 const data = new SlashCommandBuilder()
 	.setName("ban")
@@ -184,7 +192,7 @@ export const Ban: SubCommandParent = {
 	name: "ban",
 	description: "Bans users lol",
 	jsonData,
-	children: [],
+	children: BanSubCommands,
 	execute: async (
 		client: PrefixClient,
 		interaction: CommandInteraction
@@ -208,8 +216,6 @@ export const Ban: SubCommandParent = {
 				content: `This sub-command doesn't exist as of now. I am working on it! :)`,
 			});
 		}
-
 		return;
 	},
 };
-
