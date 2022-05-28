@@ -7,7 +7,7 @@ import {
 	MessageButton,
 	InteractionCollector,
 } from "discord.js";
-import { PrefixClient, SubCommand } from "src/Types/interface";
+import { PrefixClient, SubCommand } from "../../Types/interface";
 import { Infractions } from "../../Database/database";
 
 export const LogsReason: SubCommand = {
