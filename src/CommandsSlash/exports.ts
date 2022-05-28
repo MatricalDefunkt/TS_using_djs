@@ -9,6 +9,8 @@ import { Logs } from "./logs";
 import { Warn } from "./warn";
 import { Kick } from "./kick";
 import { Ban } from "./ban";
+import { Config } from "./config";
+import { Assistant } from "./assistant";
 
 export const SlashCommands: Command[] = [
 	Slow,
@@ -19,5 +21,7 @@ export const SlashCommands: Command[] = [
 	Warn,
 	Kick,
 	Ban,
+	Config,
+	Assistant,
 ];
-export const AutoCompleteCommands: AutoCompleteCommand[] = [Translate];
+export const AutoCompleteCommands: AutoCompleteCommand[] = [Translate, Config];
