@@ -8,7 +8,8 @@ import {
 	MessageActionRow,
 	MessageButton,
 } from "discord.js";
-import { PrefixClient, SubCommand } from "src/Types/interface";
+import { PrefixClient, SubCommand } from "../../Types/interface";
+import { Infraction } from "../../Utils/Infraction";
 import { Infractions } from "../../Database/database";
 
 export const LogsView: SubCommand = {
@@ -37,39 +38,40 @@ export const LogsView: SubCommand = {
 				content: `${target}'s record is clean. ✅`,
 			});
 
-		const messageBuilder: string[] = [];
+		const infraction = new Infraction();
 
-		infractions.forEach((infraction) => {
-			const caseId = infraction.getDataValue("caseID");
-			const type = infraction.getDataValue("type");
-			const target = `<@${infraction.getDataValue("targetID")}>`;
-			const mod = `<@${infraction.getDataValue("modID")}>`;
-			const reason = infraction.getDataValue("reason");
-			const time = `<t:${Math.trunc(
-				Date.parse(infraction.getDataValue("createdAt")) / 1000
-			)}:F>`;
-			const duration =
-				infraction.getDataValue("duration") === "Completed"
-					? `Completed.`
-					: `<t:${infraction.getDataValue("duration")}:F>`;
-			messageBuilder.push(
-				`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-					type == "Note" ? `**Note**` : `**Reason**`
-				} - ${reason}\n**Time** - ${time}${
-					duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-				}`
-			);
+		const embeds: MessageEmbed[] = [];
+
+		infractions.forEach((infractionElement) => {
+			const embed = infraction.getInfractionEmbed({
+				customInfraction: infractionElement,
+			});
+			const isEmbed = (x: any): x is MessageEmbed => {
+				if (x.description) return true;
+				return false;
+			};
+
+			if (!isEmbed(embed)) {
+				console.log("Could not make an embed with case ID. Please check.");
+				return interaction.editReply({
+					content: `There was an error. Please contact Matrical ASAP`,
+				});
+			}
+
+			if (!client.user) return;
+
+			embed
+				.setAuthor({
+					name: client.user.tag,
+					iconURL: client.user.displayAvatarURL(),
+				})
+				.setFooter({
+					iconURL: interaction.user.displayAvatarURL(),
+					text: interaction.user.tag,
+				})
+				.setTimestamp();
+			embeds.push(embed);
 		});
-
-		const embed = new MessageEmbed()
-			.setAuthor({
-				name: interaction.user.tag,
-				iconURL: interaction.user.displayAvatarURL(),
-			})
-			.setDescription(messageBuilder.join("\n**======**\n"))
-			.setColor(
-				messageBuilder.join().includes("Type - Ban") ? "RED" : "YELLOW"
-			);
 
 		const row = new MessageActionRow().addComponents([
 			new MessageButton()
@@ -96,7 +98,7 @@ export const LogsView: SubCommand = {
 		]);
 
 		const reply = await interaction.editReply({
-			embeds: [embed],
+			embeds: embeds,
 			components: [row],
 		});
 
@@ -110,6 +112,8 @@ export const LogsView: SubCommand = {
 		collector.on("collect", async (collected) => {
 			if (!collected.isButton()) return;
 
+			if (!collected.inCachedGuild()) return;
+
 			if (collected.customId === "next") {
 				if (counter + 5 >= totalCount)
 					return collected.reply({
@@ -119,48 +123,48 @@ export const LogsView: SubCommand = {
 
 				counter += 5;
 
+				await collected.deferUpdate();
+
 				const localInfractions = await Infractions.findAll({
 					where: { targetID: target.id },
 					limit: 5,
 					offset: counter,
 				});
-				const loacalMessageBuilder: string[] = [];
+				const localEmbeds: MessageEmbed[] = [];
 
-				localInfractions.forEach((infraction) => {
-					const caseId = infraction.getDataValue("caseID");
-					const type = infraction.getDataValue("type");
-					const target = `<@${infraction.getDataValue("targetID")}>`;
-					const mod = `<@${infraction.getDataValue("modID")}>`;
-					const reason = infraction.getDataValue("reason");
-					const time = `<t:${Math.trunc(
-						Date.parse(infraction.getDataValue("createdAt")) / 1000
-					)}:F>`;
-					const duration =
-						infraction.getDataValue("duration") === "Completed"
-							? `Completed.`
-							: `<t:${infraction.getDataValue("duration")}:F>`;
-					loacalMessageBuilder.push(
-						`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-							type == "Note" ? `**Note**` : `**Reason**`
-						} - ${reason}\n**Time** - ${time}${
-							duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-						}`
-					);
+				localInfractions.forEach((infractionElement) => {
+					const embed = infraction.getInfractionEmbed({
+						customInfraction: infractionElement,
+					});
+
+					const isEmbed = (x: any): x is MessageEmbed => {
+						if (x.description) return true;
+						return false;
+					};
+
+					if (!isEmbed(embed)) {
+						console.log("Could not make an embed with case ID. Please check.");
+						return interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP`,
+						});
+					}
+
+					if (!client.user) return;
+
+					embed
+						.setAuthor({
+							name: client.user.tag,
+							iconURL: client.user.displayAvatarURL(),
+						})
+						.setFooter({
+							iconURL: interaction.user.displayAvatarURL(),
+							text: interaction.user.tag,
+						})
+						.setTimestamp();
+					localEmbeds.push(embed);
 				});
 
-				const localEmbed = new MessageEmbed()
-					.setAuthor({
-						name: interaction.user.tag,
-						iconURL: interaction.user.displayAvatarURL(),
-					})
-					.setDescription(loacalMessageBuilder.join("\n**======**\n"))
-					.setColor(
-						loacalMessageBuilder.join().includes("Type - Ban")
-							? "RED"
-							: "YELLOW"
-					);
-
-				await collected.update({ embeds: [localEmbed] });
+				await collected.editReply({ embeds: localEmbeds });
 			} else {
 				if (counter - 5 < 0)
 					return collected.reply({
@@ -170,51 +174,50 @@ export const LogsView: SubCommand = {
 
 				counter -= 5;
 
+				await collected.deferUpdate();
+
 				const localInfractions = await Infractions.findAll({
 					where: { targetID: target.id },
 					limit: 5,
 					offset: counter,
 				});
-				const loacalMessageBuilder: string[] = [];
+				const localEmbeds: MessageEmbed[] = [];
 
-				localInfractions.forEach((infraction) => {
-					const caseId = infraction.getDataValue("caseID");
-					const type = infraction.getDataValue("type");
-					const target = `<@${infraction.getDataValue("targetID")}>`;
-					const mod = `<@${infraction.getDataValue("modID")}>`;
-					const reason = infraction.getDataValue("reason");
-					const time = `<t:${Math.trunc(
-						Date.parse(infraction.getDataValue("createdAt")) / 1000
-					)}:F>`;
-					const duration =
-						infraction.getDataValue("duration") === "Completed"
-							? `Completed.`
-							: `<t:${infraction.getDataValue("duration")}:F>`;
-					loacalMessageBuilder.push(
-						`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-							type == "Note" ? `**Note**` : `**Reason**`
-						} - ${reason}\n**Time** - ${time}${
-							duration != "<t:null:F>" ? `\n**Ending Time** - ${duration}` : ``
-						}`
-					);
+				localInfractions.forEach((infractionElement) => {
+					const embed = infraction.getInfractionEmbed({
+						customInfraction: infractionElement,
+					});
+
+					const isEmbed = (x: any): x is MessageEmbed => {
+						if (x.description) return true;
+						return false;
+					};
+
+					if (!isEmbed(embed)) {
+						console.log("Could not make an embed with case ID. Please check.");
+						return interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP`,
+						});
+					}
+
+					if (!client.user) return;
+
+					embed
+						.setAuthor({
+							name: client.user.tag,
+							iconURL: client.user.displayAvatarURL(),
+						})
+						.setFooter({
+							iconURL: interaction.user.displayAvatarURL(),
+							text: interaction.user.tag,
+						})
+						.setTimestamp();
+					localEmbeds.push(embed);
 				});
 
-				const localEmbed = new MessageEmbed()
-					.setAuthor({
-						name: interaction.user.tag,
-						iconURL: interaction.user.displayAvatarURL(),
-					})
-					.setDescription(loacalMessageBuilder.join("\n**======**\n"))
-					.setColor(
-						loacalMessageBuilder.join().includes("Type - Ban")
-							? "RED"
-							: "YELLOW"
-					);
-
-				await collected.update({ embeds: [localEmbed] });
+				await collected.editReply({ embeds: localEmbeds });
 			}
 		});
-
 		collector.on("end", async (collected) => {
 			try {
 				await interaction.editReply({ components: [disabledRow] });
