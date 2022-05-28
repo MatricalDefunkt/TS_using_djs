@@ -55,13 +55,15 @@ class Infraction {
 	 *
 	 * @returns {MessageEmbed} Message embed with the description as the case data.
 	 */
-	getInfractionEmbed = async (): Promise<MessageEmbed | Error | undefined> => {
-		const infraction = this.latestInfraction;
+	getInfractionEmbed = ({
+		customInfraction,
+	}: { customInfraction?: Infractions } = {}): MessageEmbed | void => {
+		const infraction = customInfraction ?? this.latestInfraction;
 		if (!infraction)
 			throw new Error(
-				"Infraction has not been created yet. Use <Infraction>.addInfraction"
+				"Infraction has not been created yet. Use <Infraction>.addInfraction, or give it a custom infraction."
 			);
-		if (infraction instanceof Error) return infraction;
+		if (infraction instanceof Error) return console.error(infraction);
 		const caseId = infraction.getDataValue("caseID");
 		const type = infraction.getDataValue("type");
 		const target = `<@${infraction.getDataValue("targetID")}>`;
@@ -90,13 +92,15 @@ class Infraction {
 	 *
 	 * @returns {string} String of text which is made up of all the values an infraction provides.
 	 */
-	getInfractionText = async (): Promise<string | Error | undefined> => {
-		const infraction = this.latestInfraction;
+	getInfractionText = ({
+		customInfraction,
+	}: { customInfraction?: Infractions } = {}): string | void => {
+		const infraction = customInfraction ?? this.latestInfraction;
 		if (!infraction)
 			throw new Error(
 				"Infraction has not been created yet. Use <Infraction>.addInfraction"
 			);
-		if (infraction instanceof Error) return infraction;
+		if (infraction instanceof Error) return console.error(infraction);
 		const caseId = infraction.getDataValue("caseID");
 		const type = infraction.getDataValue("type");
 		const target = `<@${infraction.getDataValue("targetID")}>`;
