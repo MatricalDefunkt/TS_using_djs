@@ -170,7 +170,7 @@ client.once("ready", async () => {
 			});
 		}
 	});
-	console.log("Ready!");
+	console.log(client.user?.tag + " is ready!");
 	client.user?.setPresence({ status: `idle` });
 	client.user?.setActivity({ name: `PYL do PYL stuff`, type: 3 });
 });
