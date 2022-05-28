@@ -6,3 +6,11 @@
 
 #Dist files
 /dist
+
+#Google Assistant
+credentials.json
+devicecredentials.json
+tokens.json
+
+#Bot Config
+config.json
