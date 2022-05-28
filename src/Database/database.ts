@@ -1,37 +1,20 @@
 /** @format */
 
 import { Sequelize, DataTypes, Model } from "sequelize";
-import * as dotenv from "dotenv";
-import { MessageEmbed } from "discord.js";
-dotenv.config();
 
-if (
-	!process.env.DBNAME ||
-	!process.env.DBUSERNAME ||
-	!process.env.DBPASSWORD ||
-	!process.env.DBHOST ||
-	!process.env.DBPORT
-)
-	throw new Error("Required env variables not found.");
-
-const sequelize = new Sequelize(
-	process.env.DBNAME,
-	process.env.DBUSERNAME,
-	process.env.DBPASSWORD,
-	{
-		host: process.env.DBHOST,
-		port: Number(process.env.DBPORT),
-		dialect: "mariadb",
-		logging: false,
-		typeValidation: true,
-		pool: {
-			max: 10,
-			min: 1,
-			acquire: 300_000,
-			idle: 900_000,
-		},
-	}
-);
+const sequelize = new Sequelize("database", "user", "pass", {
+	host: "localhostc",
+	dialect: "sqlite",
+	logging: false,
+	typeValidation: true,
+	pool: {
+		max: 10,
+		min: 1,
+		acquire: 300_000,
+		idle: 900_000,
+	},
+	storage: "PYLDB.sqlite",
+});
 
 class Tags extends Model {
 	declare tagName: string;
