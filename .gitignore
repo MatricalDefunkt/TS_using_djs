@@ -17,3 +17,6 @@ config.json
 
 #Database
 PYLDB.sqlite
+
+#Logs
+.log
