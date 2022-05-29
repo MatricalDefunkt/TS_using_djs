@@ -133,7 +133,7 @@ const data = new SlashCommandBuilder()
 				o
 					.setName("duration")
 					.setDescription(
-						"Duration of the ban. Please input in the style |1W 1D 1H|"
+						"Duration of the ban."
 					)
 					.setRequired(true)
 			)

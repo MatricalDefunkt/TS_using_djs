@@ -1,6 +1,7 @@
 /** @format */
 
 import { CommandInteraction, MessageEmbed } from "discord.js";
+import ms from "ms";
 import { Op } from "sequelize";
 import { Infractions } from "../../Database/database";
 import { SubCommand, PrefixClient } from "../../Types/interface";
@@ -25,61 +26,14 @@ export const BanTemporary: SubCommand = {
 		const _duration = interaction.options.getString("duration", true);
 		const customReason = interaction.options.getString("custom-reason");
 
-		const durationTimeRegEx = new RegExp(/\d+(?<![wdh])/gi);
-		const durationTypeRegEx = new RegExp(/[wdh]/gi);
+		const duration = ms(_duration);
 
-		const durationArray = _duration.match(durationTimeRegEx);
-
-		const durationTypes = _duration.match(durationTypeRegEx);
-
-		if (
-			!durationArray ||
-			durationArray.length < 1 ||
-			!durationTypes ||
-			durationTypes.length < 1 ||
-			durationTypes.length !== durationArray.length
-		)
+		if (!duration)
 			return interaction.editReply({
-				content: `Invalid arguements for \`duration\`. Please input duration in the format of \`xW xD xH\`.${
-					customReason
-						? `\nHere is your custom reason for your reference:\n${customReason}`
-						: ``
-				}`,
+				content: `Invalid arguements for \`duration\`. Please try again.`,
 			});
 
-		const durationMap = new Map<string, string>();
-
-		for (const durationType of durationTypes) {
-			const index = durationTypes.findIndex((t) => t === durationType);
-			durationMap.set(durationType.toLowerCase(), durationArray[index]);
-		}
-
-		let durationTimestamp: number;
-
-		let duration = {
-			weeks: 0,
-			days: 0,
-			hours: 0,
-		};
-
-		function getTime(x: string): number {
-			const timeString = durationMap.get(x);
-			if (!timeString) return 0;
-			return parseInt(timeString);
-		}
-
-		duration.weeks = getTime("w");
-		duration.days = getTime("d");
-		duration.hours = getTime("h");
-
-		if (duration.days < 1 && duration.weeks < 1 && duration.hours < 1)
-			return interaction.editReply({
-				content: `Minimum duration of a ban is 1H, sadly.`,
-			});
-
-		durationTimestamp =
-			Math.trunc(interaction.createdTimestamp / 1000) +
-			(duration.weeks * 604800 + duration.days * 86400 + duration.hours * 3600);
+		const durationTimestamp = String((Date.now() + duration) / 1000);
 
 		if (!bannee)
 			return interaction.editReply({
