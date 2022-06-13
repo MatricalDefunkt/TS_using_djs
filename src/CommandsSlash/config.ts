@@ -188,13 +188,15 @@ export const Config: AutoCompleteCommand = {
 						JSON.stringify(config)
 					);
 
-					require.cache[require.resolve("../messageCreate",)]
+					delete require.cache[require.resolve("../Events/messageCreate")];
+					delete require.cache[
+						require.resolve("../Events/messageCreateAssistant")
+					];
 
 					await button.editReply({
 						content: `Completed the change.`,
 						embeds: [],
 					});
-
 				} else if (button.customId === "nocancel") {
 					button.editReply({ content: `Cancelled the change.`, embeds: [] });
 				}
