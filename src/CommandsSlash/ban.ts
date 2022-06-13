@@ -11,7 +11,7 @@ import {
 	PrefixClient,
 	SubCommand,
 	SubCommandParent,
-} from "src/Types/interface";
+} from "../Types/interface";
 import { BanSubCommands } from "./ban/exports";
 
 const subCommands: Collection<string, SubCommand> = new Collection();
@@ -170,7 +170,6 @@ const data = new SlashCommandBuilder()
 	.addSubcommand((sc) =>
 		sc
 			.setName("undo")
-			.setDescription("Unbans the given user.")
 			.setDescription("Unbans the given user.")
 			.addStringOption((o) =>
 				o
