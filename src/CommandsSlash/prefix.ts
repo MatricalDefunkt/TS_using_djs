@@ -42,9 +42,7 @@ export const Prefix: Command = {
 	execute: async (
 		client: PrefixClient,
 		interaction: CommandInteraction
-  ): Promise<any> => {
-    
-
+	): Promise<any> => {
 		await interaction.deferReply({ ephemeral: true });
 
 		const prefix = interaction.options.getString("prefix");
@@ -85,7 +83,7 @@ export const Prefix: Command = {
 			// files.forEach((file) => {
 			// 	delete require.cache[require.resolve(`../commands_chat/${file}`)];
 			// });
-			delete require.cache[require.resolve("../Events/messageCreate.ts")];
+			delete require.cache[require.resolve("../Events/messageCreate")];
 			try {
 				await PrefixDB.update(
 					{ prefix: prefix },
