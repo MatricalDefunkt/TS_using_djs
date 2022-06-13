@@ -6,7 +6,9 @@ import {
 	Client,
 	AutocompleteInteraction,
 	Collection,
+	User,
 } from "discord.js";
+import { Infractions } from "../Database/database";
 
 export interface Event {
 	name: string;
@@ -14,7 +16,7 @@ export interface Event {
 }
 
 export interface Command extends ChatInputApplicationCommandData {
-	jsonData: Object;
+	jsonData?: Object;
 	execute: (client: PrefixClient, interaction: CommandInteraction) => any;
 }
 
@@ -32,4 +34,9 @@ export interface SubCommandParent extends Command {
 
 export interface SubCommand extends Command {
 	parentName: string;
+}
+
+export interface InfractionEmbedOptions {
+	message?: boolean;
+	customInfraction?: Infractions;
 }
