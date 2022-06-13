@@ -5,6 +5,10 @@ import { Event } from "./Types/interface";
 import dotenv from "dotenv";
 import { Events } from "./Events/exports";
 import { Prefix } from "./Database/database";
+import configs from "./Utils/config.json";
+const errChannelId = configs.find(
+	(config) => config.response.value === "errChannelId"
+)?.value;
 
 dotenv.config();
 
@@ -24,9 +28,8 @@ client.prefixes = new Collection();
 client.once("ready", async () => {
 	if (
 		!process.env.ERRGUILDID ||
-		!process.env.ERRCHANNELID ||
-		(typeof process.env.ERRGUILDID !== "string" &&
-			typeof process.env.ERRCHANNELID !== "string")
+		!errChannelId ||
+		typeof process.env.ERRGUILDID !== "string"
 	)
 		throw new Error(
 			"ErrorGuildID or ErrorChannelID is not available or is of incorrect type."
@@ -37,7 +40,7 @@ client.once("ready", async () => {
 		cache: true,
 		guild: process.env.ERRGUILDID,
 	});
-	const errChannel = await testGuild.channels.fetch(process.env.ERRCHANNELID, {
+	const errChannel = await testGuild.channels.fetch(errChannelId, {
 		force: false,
 		cache: true,
 	});
@@ -123,15 +126,12 @@ client.once("ready", async () => {
 
 			return;
 		} else {
-			if (
-				!process.env.ERRGUILDID ||
-				!process.env.ERRCHANNELID ||
-				(typeof process.env.ERRGUILDID !== "string" &&
-					typeof process.env.ERRCHANNELID !== "string")
-			)
+			if (!process.env.ERRGUILDID || typeof process.env.ERRGUILDID !== "string")
 				throw new Error(
-					"ErrorGuildID or ErrorChannelID is not available or is of incorrect type."
+					"ErrorGuildID is not available or is of incorrect type."
 				);
+
+			if (!errChannelId) throw new Error("ErrorChannelID is not available.");
 			client.prefixes.set("command", command.getDataValue("prefix"));
 			client.prefixes.set("tag", tag.getDataValue("prefix"));
 			console.log(client.prefixes);
@@ -141,13 +141,10 @@ client.once("ready", async () => {
 				guild: process.env.ERRGUILDID,
 			});
 
-			const errChannel = await testGuild.channels.fetch(
-				process.env.ERRCHANNELID,
-				{
-					force: false,
-					cache: true,
-				}
-			);
+			const errChannel = await testGuild.channels.fetch(errChannelId, {
+				force: false,
+				cache: true,
+			});
 
 			if (!errChannel?.isText())
 				throw new Error("Error channel does not exist or is not of text type.");
