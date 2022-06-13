@@ -11,7 +11,7 @@ const clientId = process.env.CLIENTID;
 
 const commandJsonData: Object[] = [];
 SlashCommands.forEach((cmd) => {
-	commandJsonData.push(cmd.jsonData);
+	if (cmd.jsonData) commandJsonData.push(cmd.jsonData);
 });
 
 if (!token) throw new Error("Missing token.");
