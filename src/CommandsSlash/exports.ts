@@ -10,7 +10,7 @@ import { Warn } from "./warn";
 import { Kick } from "./kick";
 import { Ban } from "./ban";
 import { Config } from "./config";
-import { Assistant } from "./assistant";
+import { Mute } from "./mute";
 
 export const SlashCommands: Command[] = [
 	Slow,
@@ -22,6 +22,6 @@ export const SlashCommands: Command[] = [
 	Kick,
 	Ban,
 	Config,
-	Assistant,
+	Mute,
 ];
 export const AutoCompleteCommands: AutoCompleteCommand[] = [Translate, Config];
