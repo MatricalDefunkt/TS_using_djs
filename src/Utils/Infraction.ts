@@ -2,7 +2,8 @@
 
 import { Infractions } from "../Database/database";
 import uniqid from "uniqid";
-import { MessageEmbed } from "discord.js";
+import { MessageEmbed, User } from "discord.js";
+import { InfractionEmbedOptions } from "../Types/interface";
 
 class Infraction {
 	latestInfraction: Infractions | Error | undefined;
@@ -44,7 +45,7 @@ class Infraction {
 			targetID,
 			modID,
 			reason,
-			duration: duration ? duration : null,
+			duration: duration ?? null,
 		}).catch((error) => console.log(error));
 		if (infraction) {
 			this.latestInfraction = infraction;
@@ -55,37 +56,90 @@ class Infraction {
 	 *
 	 * @returns {MessageEmbed} Message embed with the description as the case data.
 	 */
-	getInfractionEmbed = ({
-		customInfraction,
-	}: { customInfraction?: Infractions } = {}): MessageEmbed | void => {
-		const infraction = customInfraction ?? this.latestInfraction;
-		if (!infraction)
-			throw new Error(
-				"Infraction has not been created yet. Use <Infraction>.addInfraction, or give it a custom infraction."
-			);
-		if (infraction instanceof Error) return console.error(infraction);
-		const caseId = infraction.getDataValue("caseID");
-		const type = infraction.getDataValue("type");
-		const target = `<@${infraction.getDataValue("targetID")}>`;
-		const mod = `<@${infraction.getDataValue("modID")}>`;
-		const reason = infraction.getDataValue("reason");
-		const time = `<t:${Math.trunc(
-			Date.parse(infraction.getDataValue("createdAt")) / 1000
-		)}:F>`;
-		const duration =
-			infraction.getDataValue("duration") === "Completed"
-				? `Completed.`
-				: `<t:${infraction.getDataValue("duration")}:F>`;
+	getInfractionEmbed = (
+		options?: InfractionEmbedOptions
+	): MessageEmbed | void => {
+		if (options) {
+			if (!options.message) {
+				options.message = true;
+			}
+			const infraction = options.customInfraction ?? this.latestInfraction;
+			if (!infraction)
+				throw new Error(
+					"Infraction has not been created yet. Use <Infraction>.addInfraction, or give it a custom infraction."
+				);
+			if (infraction instanceof Error) return console.error(infraction);
+			const caseId = infraction.getDataValue("caseID");
+			const type = infraction.getDataValue("type");
+			const target = `<@${infraction.getDataValue("targetID")}>`;
+			const mod = `<@${infraction.getDataValue("modID")}>`;
+			const reason = infraction.getDataValue("reason");
+			const time = `<t:${Math.trunc(
+				Date.parse(infraction.getDataValue("createdAt")) / 1000
+			)}:F>`;
+			const duration =
+				infraction.getDataValue("duration") === "Completed"
+					? `Completed.`
+					: `<t:${Math.trunc(
+							parseInt(infraction.getDataValue("duration")) / 1000
+					  )}:F>`;
 
-		const embed = new MessageEmbed().setDescription(
-			`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-				type == "Note" ? `**Note**` : `**Reason**`
-			} - ${reason}\n**Time** - ${time}${
-				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-			}`
-		);
-		embed.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW");
-		return embed;
+			const embed = new MessageEmbed();
+
+			embed
+				.setDescription(
+					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+						type == "Note" ? `**Note**` : `**Reason**`
+					} - ${reason}\n**Time** - ${time}${
+						duration != "<t:null:F>" || "<t:NaN:F>"
+							? `\n**Duration** - ${duration}`
+							: ``
+					}`
+				)
+				.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW")
+				.setFooter({
+					text: options.message === true ? `` : ` Did not recieve DM.`,
+				})
+				.setTimestamp();
+			return embed;
+		} else {
+			const infraction = this.latestInfraction;
+			if (!infraction)
+				throw new Error(
+					"Infraction has not been created yet. Use <Infraction>.addInfraction, or give it a custom infraction."
+				);
+			if (infraction instanceof Error) return console.error(infraction);
+			const caseId = infraction.getDataValue("caseID");
+			const type = infraction.getDataValue("type");
+			const target = `<@${infraction.getDataValue("targetID")}>`;
+			const mod = `<@${infraction.getDataValue("modID")}>`;
+			const reason = infraction.getDataValue("reason");
+			const time = `<t:${Math.trunc(
+				Date.parse(infraction.getDataValue("createdAt")) / 1000
+			)}:F>`;
+			const duration =
+				infraction.getDataValue("duration") === "Completed"
+					? `Completed.`
+					: `<t:${Math.trunc(
+							parseInt(infraction.getDataValue("duration")) / 1000
+					  )}:F>` ?? undefined;
+
+			const embed = new MessageEmbed();
+
+			embed
+				.setDescription(
+					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
+						type == "Note" ? `**Note**` : `**Reason**`
+					} - ${reason}\n**Time** - ${time}${
+						duration != "<t:null:F>" || "<t:NaN:F>"
+							? `\n**Duration** - ${duration}`
+							: ``
+					}`
+				)
+				.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW")
+				.setTimestamp();
+			return embed;
+		}
 	};
 
 	/**
@@ -94,7 +148,9 @@ class Infraction {
 	 */
 	getInfractionText = ({
 		customInfraction,
-	}: { customInfraction?: Infractions } = {}): string | void => {
+	}: {
+		customInfraction?: Infractions;
+	} = {}): string | void => {
 		const infraction = customInfraction ?? this.latestInfraction;
 		if (!infraction)
 			throw new Error(
@@ -112,12 +168,16 @@ class Infraction {
 		const duration =
 			infraction.getDataValue("duration") === "Completed"
 				? `Completed.`
-				: `<t:${infraction.getDataValue("duration")}:F>`;
+				: `<t:${Math.trunc(
+						parseInt(infraction.getDataValue("duration")) / 1000
+				  )}:F>` ?? undefined;
 
 		const text = `**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
 			type == "Note" ? `**Note**` : `**Reason**`
 		} - ${reason}\n**Time** - ${time}${
-			duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
+			duration != "<t:null:F>" || "<t:NaN:F>"
+				? `\n**Duration** - ${duration}`
+				: ``
 		}`;
 		return text;
 	};
