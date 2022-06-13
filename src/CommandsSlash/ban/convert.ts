@@ -19,7 +19,6 @@ export const BanConvert: SubCommand = {
 	name: "convert",
 	description: "Converts ban to or from ",
 	parentName: "ban",
-	jsonData: {},
 	execute: async (
 		client: PrefixClient,
 		interaction: CommandInteraction

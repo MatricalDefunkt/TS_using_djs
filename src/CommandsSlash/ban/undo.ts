@@ -16,7 +16,6 @@ import { Op } from "sequelize";
 export const BanUndo: SubCommand = {
 	name: "undo",
 	description: "Unbans a user, adding it to the DB.",
-	jsonData: {},
 	parentName: "ban",
 	execute: async (client: PrefixClient, interaction: CommandInteraction) => {
 		if (!interaction.inCachedGuild()) return;
@@ -145,19 +144,17 @@ export const BanUndo: SubCommand = {
 								reason,
 								type: "UnBan",
 							});
-
+							const embed = infraction.getInfractionEmbed({
+								message: true,
+							});
+							if (!embed) {
+								console.log("Could not make an embed.");
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP`,
+								});
+							}
 							if (!client.user) return;
-
-							const embed = new MessageEmbed()
-								.setAuthor({
-									name: client.user.tag,
-									iconURL: client.user.displayAvatarURL(),
-								})
-								.setFooter({
-									iconURL: interaction.user.displayAvatarURL(),
-									text: interaction.user.tag,
-								})
-								.setTimestamp();
+							await interaction.editReply({ embeds: [embed] });
 							return;
 						})
 						.catch((err) => {

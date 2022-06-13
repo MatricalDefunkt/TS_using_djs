@@ -8,7 +8,6 @@ import { rules } from "../../Utils/rules.json";
 export const BanPermanant: SubCommand = {
 	name: "permanant",
 	description: "Permanantly bans a user from the guild",
-	jsonData: {},
 	parentName: "ban",
 	execute: async (client: PrefixClient, interaction: CommandInteraction) => {
 		if (!interaction.inCachedGuild()) return;
@@ -113,56 +112,17 @@ export const BanPermanant: SubCommand = {
 								type: "Ban",
 							});
 
-							if (infraction instanceof Error || !infraction.latestInfraction)
-								return interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
+							const embed = infraction.getInfractionEmbed({
+								message: true,
+							});
 
-							const embed = await infraction.getInfractionEmbed();
 							if (!embed) {
-								console.log(
-									"Could not make an embed with case ID. Please check."
-								);
+								console.log("Could not make an embed.");
 								return interaction.editReply({
 									content: `There was an error. Please contact Matrical ASAP`,
 								});
 							}
-							if (embed instanceof Error) {
-								console.error(embed);
-								interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-							const isError = (x: any): x is Error => {
-								if (x instanceof Error) return true;
-								return false;
-							};
-							if (isError(embed)) {
-								console.error(embed);
-								return interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-
-							if (!embed || !client.user) {
-								console.log(`Could not create embed.`);
-								return interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-
 							if (!client.user) return;
-
-							embed
-								.setAuthor({
-									name: client.user.tag,
-									iconURL: client.user.displayAvatarURL(),
-								})
-								.setFooter({
-									iconURL: interaction.user.displayAvatarURL(),
-									text: interaction.user.tag,
-								})
-								.setTimestamp();
 							await interaction.editReply({ embeds: [embed] });
 						})
 						.catch((rejectedReason) => {
@@ -194,8 +154,9 @@ export const BanPermanant: SubCommand = {
 							return interaction.editReply({
 								content: `There was an error. Please contact Matrical ASAP.`,
 							});
-
-						const embed = await infraction.getInfractionEmbed();
+						const embed = infraction.getInfractionEmbed({
+							message: false,
+						});
 						if (!embed) {
 							console.log(
 								"Could not make an embed with case ID. Please check."
@@ -204,34 +165,8 @@ export const BanPermanant: SubCommand = {
 								content: `There was an error. Please contact Matrical ASAP`,
 							});
 						}
-						if (embed instanceof Error) {
-							console.error(embed);
-							interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-						}
-						const isError = (x: any): x is Error => {
-							if (x instanceof Error) return true;
-							return false;
-						};
-						if (isError(embed)) {
-							console.error(embed);
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-						}
 						if (!client.user) return;
-						embed
-							.setAuthor({
-								name: client.user.tag,
-								iconURL: client.user.displayAvatarURL(),
-							})
-							.setColor("YELLOW")
-							.setFooter({
-								iconURL: interaction.user.displayAvatarURL(),
-								text: interaction.user.tag,
-							})
-							.setTimestamp();
+						embed.setColor("RED");
 						await interaction.editReply({ embeds: [embed] });
 					})
 					.catch((rejectedReason) => {

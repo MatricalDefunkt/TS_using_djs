@@ -12,7 +12,6 @@ export const BanTemporary: SubCommand = {
 	name: "temporary",
 	description:
 		"Adds a temporary ban in the DB, which is linked to a continuous check loop",
-	jsonData: {},
 	parentName: "ban",
 	execute: async (
 		client: PrefixClient,
@@ -33,7 +32,9 @@ export const BanTemporary: SubCommand = {
 				content: `Invalid arguements for \`duration\`. Please try again.`,
 			});
 
-		const durationTimestamp = String((Date.now() + duration) / 1000);
+		const durationTimestamp = String(
+			Math.trunc((Date.now() + duration) / 1000)
+		);
 
 		if (!bannee)
 			return interaction.editReply({
@@ -137,7 +138,7 @@ export const BanTemporary: SubCommand = {
 									target: bannee.user.id,
 									reason: reason.reason,
 									type: "TempBan",
-									duration: String(durationTimestamp),
+									duration: String(duration + Date.now()),
 								});
 
 								if (infraction instanceof Error || !infraction.latestInfraction)
@@ -145,51 +146,14 @@ export const BanTemporary: SubCommand = {
 										content: `There was an error. Please contact Matrical ASAP.`,
 									});
 
-								const embed = await infraction.getInfractionEmbed();
+								const embed = infraction.getInfractionEmbed();
 								if (!embed) {
-									console.log(
-										"Could not make an embed with case ID. Please check."
-									);
+									console.log("Could not make an embed Please check.");
 									return interaction.editReply({
 										content: `There was an error. Please contact Matrical ASAP`,
 									});
 								}
-								if (embed instanceof Error) {
-									console.error(embed);
-									interaction.editReply({
-										content: `There was an error. Please contact Matrical ASAP.`,
-									});
-								}
-								const isError = (x: any): x is Error => {
-									if (x instanceof Error) return true;
-									return false;
-								};
-								if (isError(embed)) {
-									console.error(embed);
-									return interaction.editReply({
-										content: `There was an error. Please contact Matrical ASAP.`,
-									});
-								}
-
-								if (!embed || !client.user) {
-									console.log(`Could not create embed.`);
-									return interaction.editReply({
-										content: `There was an error. Please contact Matrical ASAP.`,
-									});
-								}
-
 								if (!client.user) return;
-
-								embed
-									.setAuthor({
-										name: client.user.tag,
-										iconURL: client.user.displayAvatarURL(),
-									})
-									.setFooter({
-										iconURL: interaction.user.displayAvatarURL(),
-										text: interaction.user.tag,
-									})
-									.setTimestamp();
 								await interaction.editReply({ embeds: [embed] });
 							})
 							.catch((rejectedReason) => {
@@ -219,7 +183,7 @@ export const BanTemporary: SubCommand = {
 								target: bannee.user.id,
 								reason: reason.reason,
 								type: "TempBan",
-								duration: String(durationTimestamp),
+								duration: String(duration + Date.now()),
 							});
 
 							if (infraction instanceof Error || !infraction.latestInfraction)
@@ -227,7 +191,9 @@ export const BanTemporary: SubCommand = {
 									content: `There was an error. Please contact Matrical ASAP.`,
 								});
 
-							const embed = await infraction.getInfractionEmbed();
+							const embed = infraction.getInfractionEmbed({
+								message: false,
+							});
 							if (!embed) {
 								console.log(
 									"Could not make an embed with case ID. Please check."
@@ -236,42 +202,7 @@ export const BanTemporary: SubCommand = {
 									content: `There was an error. Please contact Matrical ASAP`,
 								});
 							}
-							if (embed instanceof Error) {
-								console.error(embed);
-								interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-							const isError = (x: any): x is Error => {
-								if (x instanceof Error) return true;
-								return false;
-							};
-							if (isError(embed)) {
-								console.error(embed);
-								return interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-
-							if (!embed || !client.user) {
-								console.log(`Could not create embed.`);
-								return interaction.editReply({
-									content: `There was an error. Please contact Matrical ASAP.`,
-								});
-							}
-
 							if (!client.user) return;
-
-							embed
-								.setAuthor({
-									name: client.user.tag,
-									iconURL: client.user.displayAvatarURL(),
-								})
-								.setFooter({
-									iconURL: interaction.user.displayAvatarURL(),
-									text: interaction.user.tag,
-								})
-								.setTimestamp();
 							await interaction.editReply({ embeds: [embed] });
 						})
 						.catch((rejectedReason) => {

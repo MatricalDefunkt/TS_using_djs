@@ -46,30 +46,8 @@ export const LogsView: SubCommand = {
 			const embed = infraction.getInfractionEmbed({
 				customInfraction: infractionElement,
 			});
-			const isEmbed = (x: any): x is MessageEmbed => {
-				if (x.description) return true;
-				return false;
-			};
 
-			if (!isEmbed(embed)) {
-				console.log("Could not make an embed with case ID. Please check.");
-				return interaction.editReply({
-					content: `There was an error. Please contact Matrical ASAP`,
-				});
-			}
-
-			if (!client.user) return;
-
-			embed
-				.setAuthor({
-					name: client.user.tag,
-					iconURL: client.user.displayAvatarURL(),
-				})
-				.setFooter({
-					iconURL: interaction.user.displayAvatarURL(),
-					text: interaction.user.tag,
-				})
-				.setTimestamp();
+			if (!client.user || !embed) return;
 			embeds.push(embed);
 		});
 
@@ -136,31 +114,7 @@ export const LogsView: SubCommand = {
 					const embed = infraction.getInfractionEmbed({
 						customInfraction: infractionElement,
 					});
-
-					const isEmbed = (x: any): x is MessageEmbed => {
-						if (x.description) return true;
-						return false;
-					};
-
-					if (!isEmbed(embed)) {
-						console.log("Could not make an embed with case ID. Please check.");
-						return interaction.editReply({
-							content: `There was an error. Please contact Matrical ASAP`,
-						});
-					}
-
-					if (!client.user) return;
-
-					embed
-						.setAuthor({
-							name: client.user.tag,
-							iconURL: client.user.displayAvatarURL(),
-						})
-						.setFooter({
-							iconURL: interaction.user.displayAvatarURL(),
-							text: interaction.user.tag,
-						})
-						.setTimestamp();
+					if (!client.user || !embed) return;
 					localEmbeds.push(embed);
 				});
 
@@ -187,31 +141,7 @@ export const LogsView: SubCommand = {
 					const embed = infraction.getInfractionEmbed({
 						customInfraction: infractionElement,
 					});
-
-					const isEmbed = (x: any): x is MessageEmbed => {
-						if (x.description) return true;
-						return false;
-					};
-
-					if (!isEmbed(embed)) {
-						console.log("Could not make an embed with case ID. Please check.");
-						return interaction.editReply({
-							content: `There was an error. Please contact Matrical ASAP`,
-						});
-					}
-
-					if (!client.user) return;
-
-					embed
-						.setAuthor({
-							name: client.user.tag,
-							iconURL: client.user.displayAvatarURL(),
-						})
-						.setFooter({
-							iconURL: interaction.user.displayAvatarURL(),
-							text: interaction.user.tag,
-						})
-						.setTimestamp();
+					if (!embed || !client.user) return;
 					localEmbeds.push(embed);
 				});
 
