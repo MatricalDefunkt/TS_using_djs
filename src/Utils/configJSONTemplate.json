@@ -1,0 +1,43 @@
+[
+	{
+		"response": { "name": "Mod Role ID", "value": "modRoleId" },
+		"value": "",
+		"type": "role"
+	},
+	{
+		"response": { "name": "Admin Role ID", "value": "adminRoleId" },
+		"value": "",
+		"type": "role"
+	},
+	{
+		"response": { "name": "Mute Role ID", "value": "muteRoleId" },
+		"value": "",
+		"type": "role"
+	},
+	{
+		"response": {
+			"name": "Punishment Log Channel ID",
+			"value": "infractionLogId"
+		},
+		"value": "",
+		"type": "channel"
+	},
+	{
+		"response": { "name": "Moderation Log Channel ID", "value": "modLogId" },
+		"value": "",
+		"type": "channel"
+	},
+	{
+		"response": { "name": "Error Channel ID", "value": "errChannelId" },
+		"value": "",
+		"type": "channel"
+	},
+	{
+		"response": {
+			"name": "Google Assistant Channel ID",
+			"value": "assistantChannelId"
+		},
+		"value": "",
+		"type": "channel"
+	}
+]
