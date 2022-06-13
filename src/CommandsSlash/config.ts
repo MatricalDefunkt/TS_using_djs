@@ -8,8 +8,6 @@ import {
 	AutocompleteInteraction,
 	MessageActionRow,
 	MessageButton,
-	MessageComponentInteraction,
-	ApplicationCommandOptionChoiceData,
 } from "discord.js";
 import fs from "fs";
 import path from "path";
@@ -18,8 +16,8 @@ import config from "../Utils/config.json";
 
 const responses: { name: string; value: string }[] = [];
 
-for (const entry of Object.entries(config)) {
-	responses.push(entry[1].response);
+for (const entry of config) {
+	responses.push(entry.response);
 }
 
 const data = new SlashCommandBuilder()
@@ -56,10 +54,14 @@ export const Config: AutoCompleteCommand = {
 		interaction: CommandInteraction
 	): Promise<any> => {
 		if (!interaction.inCachedGuild()) return;
+
 		await interaction.deferReply({ ephemeral: true });
 		const option = interaction.options.getString("config-type", true);
 		const newValue = interaction.options.getString("config-value", true);
 		const reason = interaction.options.getString("reason", true);
+
+		if (option === `missingPermissions`)
+			return interaction.editReply({ content: `Missing permissions.` });
 
 		const row = new MessageActionRow().addComponents([
 			new MessageButton()
@@ -115,18 +117,87 @@ export const Config: AutoCompleteCommand = {
 		reply
 			.awaitMessageComponent({ componentType: "BUTTON" })
 			.then(async (button) => {
-				if (!button.isButton()) return;
 				await button.deferUpdate();
 				await button.editReply({ components: [disabledRow] });
 
-				const configBuffer = fs.readFileSync(
-					path.join(__dirname, "../Utils/config.json")
-				);
-				const configJSON = JSON.parse(configBuffer.toString());
-				await button.editReply({
-					content: `\`\`\`json${configJSON}\`\`\``,
-				});
-				console.log(configJSON);
+				if (button.customId === "yeschange") {
+					console.log(config);
+					const changeConfig = config.find(
+						(config) => config.response.value === option
+					);
+					const changeConfigIndex = config.findIndex(
+						(config) => config.response.value === option
+					);
+
+					if (changeConfig) {
+						if (changeConfig.type === "role") {
+							try {
+								const role = await interaction.guild.roles.fetch(newValue, {
+									force: false,
+									cache: true,
+								});
+								if (!role)
+									return button.editReply({
+										content: `Given value is not a role ID`,
+										embeds: [],
+									});
+								changeConfig.value = newValue;
+								config[changeConfigIndex] = changeConfig;
+								console.log(config);
+							} catch (error: any) {
+								if (error.code === 10003 || error.code === 50035)
+									return button.editReply({
+										content: `Given value is not a role ID`,
+										embeds: [],
+									});
+								else console.error(error);
+							}
+						} else if (changeConfig.type === "channel") {
+							try {
+								const channel = await interaction.guild.channels.fetch(
+									newValue,
+									{
+										force: false,
+										cache: true,
+									}
+								);
+								if (!channel)
+									return button.editReply({
+										content: `Given value is not a channel ID`,
+										embeds: [],
+									});
+								changeConfig.value = newValue;
+								config[changeConfigIndex] = changeConfig;
+								console.log(config);
+							} catch (error: any) {
+								if (error.code === 10003 || error.code === 50035)
+									return button.editReply({
+										content: `Given value is not a channel ID`,
+										embeds: [],
+									});
+								else console.error(error);
+							}
+						}
+					}
+					await button.editReply({
+						content: JSON.stringify(config),
+					});
+
+					fs.writeFileSync(
+						path.join(__dirname, "../Utils/config.json"),
+						JSON.stringify(config)
+					);
+
+					require.cache[require.resolve("../messageCreate",)]
+
+					await button.editReply({
+						content: `Completed the change.`,
+						embeds: [],
+					});
+
+				} else if (button.customId === "nocancel") {
+					button.editReply({ content: `Cancelled the change.`, embeds: [] });
+				}
 			});
 
 		return;
@@ -135,6 +206,13 @@ export const Config: AutoCompleteCommand = {
 		client: Client,
 		interaction: AutocompleteInteraction
 	): Promise<any> => {
+		if (!interaction.inCachedGuild()) return;
+
+		if (!interaction.member.permissions.has("ADMINISTRATOR"))
+			return interaction.respond([
+				{ name: `Missing permissions.`, value: `missingPermissions` },
+			]);
+
 		const typing = interaction.options.getFocused();
 
 		if (!typing) {
