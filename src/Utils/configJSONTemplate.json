@@ -39,5 +39,13 @@
 		},
 		"value": "",
 		"type": "channel"
+	},
+	{
+		"response": {
+			"name": "Server Change Log Channel ID",
+			"value": "serverLogId"
+		},
+		"value": "",
+		"type": "channel"
 	}
 ]
