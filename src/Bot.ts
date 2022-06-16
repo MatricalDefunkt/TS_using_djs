@@ -163,7 +163,7 @@ client.once("ready", async () => {
 				)}:F>.`,
 			});
 			Events.forEach((event: Event) => {
-				event.handle(client);
+				if (client.isReady()) event.handle(client);
 			});
 		}
 	});
