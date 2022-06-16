@@ -7,8 +7,8 @@ import { BanTemporary } from "./temporary";
 import { BanUndo } from "./undo";
 
 export const BanSubCommands: SubCommand[] = [
-	BanConvert,
-	BanPermanant,
-	BanTemporary,
-	BanUndo,
+	new BanConvert(),
+	new BanPermanant(),
+	new BanTemporary(),
+	new BanUndo(),
 ];

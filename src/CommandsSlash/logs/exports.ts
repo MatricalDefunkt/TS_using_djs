@@ -8,9 +8,9 @@ import { LogsGet } from "./get";
 import { SubCommand } from "../../Types/interface";
 
 export const LogsSubCommands: SubCommand[] = [
-	LogsClear,
-	LogsCount,
-	LogsReason,
-	LogsView,
-	LogsGet,
+	new LogsClear(),
+	new LogsCount(),
+	new LogsReason(),
+	new LogsView(),
+	new LogsGet(),
 ];

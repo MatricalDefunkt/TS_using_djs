@@ -13,15 +13,18 @@ import { Config } from "./config";
 import { Mute } from "./mute";
 
 export const SlashCommands: Command[] = [
-	Slow,
-	Translate,
-	Prefix,
-	Note,
-	Logs,
-	Warn,
-	Kick,
-	Ban,
-	Config,
-	Mute,
+	new Slow(),
+	new Translate(),
+	new Prefix(),
+	new Note(),
+	new Logs(),
+	new Warn(),
+	new Kick(),
+	new Ban(),
+	new Config(),
+	new Mute(),
 ];
-export const AutoCompleteCommands: AutoCompleteCommand[] = [Translate, Config];
+export const AutoCompleteCommands: AutoCompleteCommand[] = [
+	new Translate(),
+	new Config(),
+];

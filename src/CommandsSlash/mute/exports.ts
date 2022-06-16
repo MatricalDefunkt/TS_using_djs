@@ -7,8 +7,8 @@ import { MuteTemporary } from "./temporary";
 import { MuteUndo } from "./undo";
 
 export const MuteSubCommands: SubCommand[] = [
-	MuteUndo,
-	MuteTemporary,
-	MutePermanent,
-	MuteConvert,
+	new MuteUndo(),
+	new MuteTemporary(),
+	new MutePermanent(),
+	new MuteConvert(),
 ];
