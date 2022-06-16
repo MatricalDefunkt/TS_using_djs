@@ -1,13 +1,19 @@
 /** @format */
 
 import { SlashCommandBuilder } from "@discordjs/builders";
+import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
 import {
 	MessageEmbed,
 	Client,
 	CommandInteraction,
 	Collection,
 } from "discord.js";
-import { PrefixClient, SubCommandParent, SubCommand } from "../Types/interface";
+import {
+	PrefixClient,
+	SubCommandParent,
+	SubCommand,
+	BasicCommandTypes,
+} from "../Types/interface";
 import { LogsSubCommands } from "./logs/exports";
 
 const subCommands: Collection<string, SubCommand> = new Collection();
@@ -98,34 +104,44 @@ const data = new SlashCommandBuilder()
 	);
 const jsonData = data.toJSON();
 
-export const Logs: SubCommandParent = {
-	name: "logs",
-	description: 'Runs sub commands with the parent "logs"',
-	jsonData,
-	children: LogsSubCommands,
-	execute: async (
-		client: PrefixClient,
-		interaction: CommandInteraction
-	): Promise<any> => {
-		await interaction.deferReply({ ephemeral: true });
+export class Logs implements SubCommandParent {
+	name: string;
+	description: string;
+	jsonData: RESTPostAPIApplicationCommandsJSONBody;
+	children: SubCommand[];
+	commandType: BasicCommandTypes;
+	execute: SubCommandParent["execute"];
 
-		const subCommand = subCommands.get(interaction.options.getSubcommand());
+	constructor() {
+		this.name = "logs";
+		this.description = 'Runs sub commands with the parent "logs"';
+		this.jsonData = jsonData;
+		this.children = LogsSubCommands;
+		this.commandType = "regular";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			await interaction.deferReply({ ephemeral: true });
 
-		if (subCommand) {
-			try {
-				await subCommand.execute(client, interaction);
-				return;
-			} catch (e: any) {
+			const subCommand = subCommands.get(interaction.options.getSubcommand());
+
+			if (subCommand) {
+				try {
+					await subCommand.execute(client, interaction);
+					return;
+				} catch (e: any) {
+					await interaction.editReply({
+						content: "There was an error. Please contact Matrical ASAP",
+					});
+					console.error(e);
+				}
+			} else {
 				await interaction.editReply({
-					content: "There was an error. Please contact Matrical ASAP",
+					content: `This sub-command doesn't exist as of now. I am working on it! :)`,
 				});
-				console.error(e);
 			}
-		} else {
-			await interaction.editReply({
-				content: `This sub-command doesn't exist as of now. I am working on it! :)`,
-			});
-		}
-		return;
-	},
-};
+			return;
+		};
+	}
+}

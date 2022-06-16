@@ -1,9 +1,9 @@
 /** @format */
 
 import { SlashCommandBuilder } from "@discordjs/builders";
+import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
 import { MessageEmbed, CommandInteraction } from "discord.js";
-import { Infractions } from "../Database/database";
-import { Command, PrefixClient } from "../Types/interface";
+import { BasicCommandTypes, Command, PrefixClient } from "../Types/interface";
 import { Infraction } from "../Utils/Infraction";
 import { rules } from "../Utils/rules.json";
 
@@ -47,193 +47,154 @@ const data = new SlashCommandBuilder()
 
 const jsonData = data.toJSON();
 
-export const Warn: Command = {
-	name: "warn",
-	description: "Warns a user, with a dm and a database entry about the same.",
-	jsonData,
-	execute: async (
-		client: PrefixClient,
-		interaction: CommandInteraction
-	): Promise<any> => {
-		await interaction.deferReply({ ephemeral: true });
-		if (!interaction.inCachedGuild()) return;
-		if (!client.user) return;
-		const userForWarn = interaction.options.getMember("user", true);
-		const _reason = interaction.options.getInteger("reason", true);
-		const customReason = interaction.options.getString("custom-reason");
+export class Warn implements Command {
+	name: string;
+	description: string;
+	jsonData: RESTPostAPIApplicationCommandsJSONBody;
+	commandType: BasicCommandTypes;
+	execute: Command["execute"];
 
-		let reason: { id: number; reason: string; rule: string };
+	constructor() {
+		this.name = "warn";
+		this.description =
+			"Warns a user, with a dm and a database entry about the same.";
+		this.jsonData = jsonData;
+		this.commandType = "infraction";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			await interaction.deferReply({ ephemeral: true });
+			if (!interaction.inCachedGuild()) return;
+			if (!client.user) return;
+			const userForWarn = interaction.options.getMember("user", true);
+			const _reason = interaction.options.getInteger("reason", true);
+			const customReason = interaction.options.getString("custom-reason");
 
-		const foundRule = rules.find((rule) => rule.id == _reason);
+			let reason: { id: number; reason: string; rule: string };
 
-		if (_reason === 0) {
-			reason = {
-				id: 0,
-				reason: customReason ? customReason : "None provided.",
-				rule: customReason ? customReason : "None provided.",
-			};
-		} else {
-			reason = foundRule
-				? foundRule
-				: { id: 404, rule: "Not found.", reason: "Not found." };
-		}
+			const foundRule = rules.find((rule) => rule.id == _reason);
 
-		if (reason.id === 404) {
-			console.log(
-				"Rule with id" +
-					_reason +
-					"was not found. Please check rules.json asap."
-			);
-			return interaction.editReply({
-				content: `There was an error. Please contact Matrical ASAP.`,
-			});
-		}
-
-		const dmChannel = await userForWarn.createDM(true);
-		dmChannel
-			.send({
-				content: `Message from Practice Your Language:`,
-				embeds: [
-					new MessageEmbed()
-						.setAuthor({
-							name: client.user.tag,
-							iconURL: client.user.displayAvatarURL(),
-						})
-						.setColor("RED")
-						.setDescription("A message from PYL staff:")
-						.addField(
-							"Message:",
-							"You have been warned in PYL for breaking (a) server rule(s)"
-						)
-						.addField("Rule:", reason.rule),
-				],
-			})
-			.then(async () => {
-				interaction.editReply({
-					content: `${userForWarn} has recieved the warn message.\nSaving now...`,
-				});
-				const infraction = new Infraction();
-				await infraction.addInfraction({
-					modID: interaction.user.id,
-					target: userForWarn.user.id,
-					reason: reason.reason,
-					type: "Warn",
-				});
-				if (infraction instanceof Error || !infraction.latestInfraction)
-					return interaction.editReply({
-						content: `There was an error. Please contact Matrical ASAP.`,
-					});
-
-				const embed = await infraction.getInfractionEmbed();
-				if (!embed) {
-					console.log("Could not make an embed with case ID. Please check.");
-					return interaction.editReply({
-						content: `There was an error. Please contact Matrical ASAP`,
-					});
-				}
-				const isError = (x: any): x is Error => {
-					if (x instanceof Error) return true;
-					return false;
+			if (_reason === 0) {
+				reason = {
+					id: 0,
+					reason: customReason ? customReason : "None provided.",
+					rule: customReason ? customReason : "None provided.",
 				};
-				if (isError(embed)) {
-					console.error(embed);
-					return interaction.editReply({
-						content: `There was an error. Please contact Matrical ASAP.`,
-					});
-				}
+			} else {
+				reason = foundRule
+					? foundRule
+					: { id: 404, rule: "Not found.", reason: "Not found." };
+			}
 
-				if (!client.user) return;
-				embed
-					.setAuthor({
-						name: client.user.tag,
-						iconURL: client.user?.displayAvatarURL(),
-					})
-					.setColor("YELLOW")
-					.setFooter({
-						iconURL: interaction.user.displayAvatarURL(),
-						text: interaction.user.tag,
-					})
-					.setTimestamp();
-				await interaction.editReply({ content: `Saved.`, embeds: [embed] });
-			})
-			.catch(async (e) => {
-				if (e.code === 50007) {
-					try {
-						await interaction.editReply({
-							content: `${userForWarn} has been warned, but did not recieve the message.`,
-						});
+			if (reason.id === 404) {
+				console.log(
+					"Rule with id" +
+						_reason +
+						"was not found. Please check rules.json asap."
+				);
+				return interaction.editReply({
+					content: `There was an error. Please contact Matrical ASAP.`,
+				});
+			}
 
-						const infraction = new Infraction();
-						await infraction.addInfraction({
-							modID: interaction.user.id,
-							target: userForWarn.user.id,
-							reason: reason.reason,
-							type: "Warn",
-						});
-						if (infraction instanceof Error || !infraction.latestInfraction)
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-
-						const embed = await infraction.getInfractionEmbed();
-						if (!embed) {
-							console.log(
-								"Could not make an embed with case ID. Please check."
-							);
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP`,
-							});
-						}
-						if (embed instanceof Error) {
-							console.error(embed);
-							interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-						}
-						const isError = (x: any): x is Error => {
-							if (x instanceof Error) return true;
-							return false;
-						};
-						if (isError(embed)) {
-							console.error(embed);
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-						}
-
-						if (!embed || !client.user) {
-							console.log(`Could not create embed.`);
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
-							});
-						}
-
-						if (!client.user) return;
-
-						embed
+			const dmChannel = await userForWarn.createDM(true);
+			dmChannel
+				.send({
+					content: `Message from Practice Your Language:`,
+					embeds: [
+						new MessageEmbed()
 							.setAuthor({
 								name: client.user.tag,
 								iconURL: client.user.displayAvatarURL(),
 							})
-							.setFooter({
-								iconURL: interaction.user.displayAvatarURL(),
-								text: interaction.user.tag,
-							})
-							.setTimestamp();
-						await interaction.editReply({ embeds: [embed] });
-						await interaction.editReply({ content: `Saved.`, embeds: [embed] });
-					} catch (rejectedReason) {
-						interaction.editReply({
-							content: `Something went wrong. Please contact Matrical ASAP.`,
-						});
-						console.log(rejectedReason);
-					}
-				} else {
-					console.error(e);
+							.setColor("RED")
+							.setDescription("A message from PYL staff:")
+							.addField(
+								"Message:",
+								"You have been warned in PYL for breaking (a) server rule(s)"
+							)
+							.addField("Rule:", reason.rule),
+					],
+				})
+				.then(async () => {
 					interaction.editReply({
-						content: `There was an error. Please contact Matrical ASAP.`,
+						content: `${userForWarn} has recieved the warn message.\nSaving now...`,
 					});
-				}
-			});
-	},
-};
+					const infraction = new Infraction();
+					await infraction.addInfraction({
+						modID: interaction.user.id,
+						target: userForWarn.user.id,
+						reason: reason.reason,
+						type: "Warn",
+					});
+
+					const embed = infraction.getInfractionEmbed();
+					if (!embed) {
+						console.log("Could not make an embed with case ID. Please check.");
+						return interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP`,
+						});
+					}
+					await interaction.editReply({ content: `Warned.`, embeds: [embed] });
+					client.emit("loggerCreate", {
+						embed,
+						interaction,
+						type: "infraction",
+					});
+				})
+				.catch(async (e) => {
+					if (e.code === 50007) {
+						try {
+							await interaction.editReply({
+								content: `${userForWarn} has been warned, but did not recieve the message.`,
+							});
+
+							const infraction = new Infraction();
+							await infraction.addInfraction({
+								modID: interaction.user.id,
+								target: userForWarn.user.id,
+								reason: reason.reason,
+								type: "Warn",
+							});
+							if (infraction instanceof Error || !infraction.latestInfraction)
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP.`,
+								});
+
+							const embed = infraction.getInfractionEmbed({ message: false });
+
+							if (!embed) {
+								console.log(
+									"Could not make an embed with case ID. Please check."
+								);
+								return interaction.editReply({
+									content: `There was an error. Please contact Matrical ASAP`,
+								});
+							}
+
+							await interaction.editReply({
+								embeds: [embed],
+							});
+
+							client.emit("loggerCreate", {
+								embed,
+								interaction,
+								type: "infraction",
+							});
+						} catch (rejectedReason) {
+							interaction.editReply({
+								content: `Something went wrong. Please contact Matrical ASAP.`,
+							});
+							console.log(rejectedReason);
+						}
+					} else {
+						console.error(e);
+						interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP.`,
+						});
+					}
+				});
+		};
+	}
+}

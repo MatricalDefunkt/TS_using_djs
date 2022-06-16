@@ -1,17 +1,32 @@
 /** @format */
 
-import { Client, Interaction } from "discord.js";
-import { Event, PrefixClient } from "../Types/interface";
+import { Interaction } from "discord.js";
+import {
+	AutoCompleteCommand,
+	Command,
+	Event,
+	PrefixClient,
+	SubCommandParent,
+} from "../Types/interface";
 import { AutoCompleteCommands, SlashCommands } from "../CommandsSlash/exports";
+import configs from "../Utils/config.json";
+
+const punishmentLogId = configs.find(
+	(config) => config.response.value === "infractionLogId"
+)?.value;
 
 export const interactionCreate: Event = {
 	name: "interactionCreate",
-	handle: async (client: PrefixClient) => {
+	handle: async (client: PrefixClient<true>) => {
 		client.on(
 			"interactionCreate",
 			async (interaction: Interaction): Promise<any> => {
 				if (interaction.isCommand()) {
-					const foundCommand = SlashCommands.find(
+					const foundCommand:
+						| Command
+						| SubCommandParent
+						| AutoCompleteCommand
+						| undefined = SlashCommands.find(
 						(command) => command.name === interaction.commandName
 					);
 					if (foundCommand) {

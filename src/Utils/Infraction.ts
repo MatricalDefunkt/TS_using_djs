@@ -17,6 +17,7 @@ class Infraction {
 		target: targetID,
 		reason,
 		oldType,
+		newType,
 		type,
 		duration,
 	}: {
@@ -41,7 +42,7 @@ class Infraction {
 	}): Promise<Infractions | Error> {
 		const infraction = await Infractions.create({
 			caseID: uniqid(`${type.toLowerCase()}--`),
-			type: oldType ? `${oldType} => ${type}` : type,
+			type: type,
 			targetID,
 			modID,
 			reason,
@@ -60,7 +61,7 @@ class Infraction {
 		options?: InfractionEmbedOptions
 	): MessageEmbed | void => {
 		if (options) {
-			if (!options.message) {
+			if (typeof options.message === "undefined") {
 				options.message = true;
 			}
 			const infraction = options.customInfraction ?? this.latestInfraction;
@@ -77,12 +78,7 @@ class Infraction {
 			const time = `<t:${Math.trunc(
 				Date.parse(infraction.getDataValue("createdAt")) / 1000
 			)}:F>`;
-			const duration =
-				infraction.getDataValue("duration") === "Completed"
-					? `Completed.`
-					: `<t:${Math.trunc(
-							parseInt(infraction.getDataValue("duration")) / 1000
-					  )}:F>`;
+			const duration = this.#getDuration(infraction);
 
 			const embed = new MessageEmbed();
 
@@ -90,16 +86,14 @@ class Infraction {
 				.setDescription(
 					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
 						type == "Note" ? `**Note**` : `**Reason**`
-					} - ${reason}\n**Time** - ${time}${
-						duration != "<t:null:F>" || "<t:NaN:F>"
-							? `\n**Duration** - ${duration}`
-							: ``
-					}`
+					} - ${reason}\n**Time** - ${time}\n**Duration** - ${duration ?? `N/A`}
+					`
 				)
 				.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW")
 				.setFooter({
 					text: options.message === true ? `` : ` Did not recieve DM.`,
 				})
+				.setTitle(type)
 				.setTimestamp();
 			return embed;
 		} else {
@@ -117,12 +111,7 @@ class Infraction {
 			const time = `<t:${Math.trunc(
 				Date.parse(infraction.getDataValue("createdAt")) / 1000
 			)}:F>`;
-			const duration =
-				infraction.getDataValue("duration") === "Completed"
-					? `Completed.`
-					: `<t:${Math.trunc(
-							parseInt(infraction.getDataValue("duration")) / 1000
-					  )}:F>` ?? undefined;
+			const duration = this.#getDuration(infraction);
 
 			const embed = new MessageEmbed();
 
@@ -130,13 +119,11 @@ class Infraction {
 				.setDescription(
 					`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
 						type == "Note" ? `**Note**` : `**Reason**`
-					} - ${reason}\n**Time** - ${time}${
-						duration != "<t:null:F>" || "<t:NaN:F>"
-							? `\n**Duration** - ${duration}`
-							: ``
-					}`
+					} - ${reason}\n**Time** - ${time}\n**Duration** - ${duration ?? `N/A`}
+					`
 				)
 				.setColor(type === "Ban" || type === "TempBan" ? "RED" : "YELLOW")
+				.setTitle(type)
 				.setTimestamp();
 			return embed;
 		}
@@ -165,22 +152,22 @@ class Infraction {
 		const time = `<t:${Math.trunc(
 			Date.parse(infraction.getDataValue("createdAt")) / 1000
 		)}:F>`;
-		const duration =
-			infraction.getDataValue("duration") === "Completed"
-				? `Completed.`
-				: `<t:${Math.trunc(
-						parseInt(infraction.getDataValue("duration")) / 1000
-				  )}:F>` ?? undefined;
+		const duration = this.#getDuration(infraction);
 
 		const text = `**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
 			type == "Note" ? `**Note**` : `**Reason**`
-		} - ${reason}\n**Time** - ${time}${
-			duration != "<t:null:F>" || "<t:NaN:F>"
-				? `\n**Duration** - ${duration}`
-				: ``
-		}`;
+		} - ${reason}\n**Time** - ${time}\n**Duration** - ${duration ?? `N/A`}`;
 		return text;
 	};
+	#getDuration(infraction: Infractions): string | undefined {
+		const duration: string | null = infraction.getDataValue("duration");
+		if (!duration) {
+			return;
+		}
+		if (duration === `Completed`) return "Completed";
+
+		return `<t:` + String(Math.trunc(parseInt(duration, 10) / 1000)) + `:F>`;
+	}
 }
 
 export { Infraction };

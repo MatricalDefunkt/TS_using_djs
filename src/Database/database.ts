@@ -69,6 +69,8 @@ Infractions.init(
 			primaryKey: true,
 		},
 		type: DataTypes.TEXT,
+		oldType: DataTypes.TEXT,
+		newType: DataTypes.TEXT,
 		targetID: DataTypes.TEXT,
 		modID: DataTypes.TEXT,
 		reason: DataTypes.STRING,

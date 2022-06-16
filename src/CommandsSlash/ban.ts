@@ -1,13 +1,10 @@
 /** @format */
 
 import { SlashCommandBuilder } from "@discordjs/builders";
+import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
+import { CommandInteraction, Collection } from "discord.js";
 import {
-	MessageEmbed,
-	Client,
-	CommandInteraction,
-	Collection,
-} from "discord.js";
-import {
+	BasicCommandTypes,
 	PrefixClient,
 	SubCommand,
 	SubCommandParent,
@@ -132,9 +129,7 @@ const data = new SlashCommandBuilder()
 			.addStringOption((o) =>
 				o
 					.setName("duration")
-					.setDescription(
-						"Duration of the ban."
-					)
+					.setDescription("Duration of the ban.")
 					.setRequired(true)
 			)
 			.addBooleanOption((o) =>
@@ -187,34 +182,44 @@ const data = new SlashCommandBuilder()
 
 const jsonData = data.toJSON();
 
-export const Ban: SubCommandParent = {
-	name: "ban",
-	description: "Bans users lol",
-	jsonData,
-	children: BanSubCommands,
-	execute: async (
-		client: PrefixClient,
+export class Ban implements SubCommandParent {
+	name: string;
+	description: string;
+	jsonData: RESTPostAPIApplicationCommandsJSONBody;
+	children: SubCommand[];
+	commandType: BasicCommandTypes;
+	execute: (
+		client: PrefixClient<true>,
 		interaction: CommandInteraction
-	): Promise<any> => {
-		await interaction.deferReply({ ephemeral: true });
+	) => Promise<any>;
 
-		const subCommand = subCommands.get(interaction.options.getSubcommand());
+	constructor() {
+		this.name = "ban";
+		this.description = "Bans users lol";
+		this.jsonData = jsonData;
+		this.children = BanSubCommands;
+		this.commandType = "regular";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			await interaction.deferReply({ ephemeral: true });
 
-		if (subCommand) {
-			try {
-				await subCommand.execute(client, interaction);
-				return;
-			} catch (e) {
-				await interaction.editReply({
-					content: "There was an error. Please contact Matrical ASAP",
+			const subCommand = subCommands.get(interaction.options.getSubcommand());
+
+			if (subCommand) {
+				await subCommand.execute(client, interaction).catch((error: any) => {
+					interaction.editReply({
+						content: `There was an error. Please contact Matrical ASAP.`,
+					});
+					console.log(error);
 				});
-				console.error(e);
+			} else {
+				await interaction.editReply({
+					content: `This sub-command doesn't exist as of now. I am working on it! :)`,
+				});
 			}
-		} else {
-			await interaction.editReply({
-				content: `This sub-command doesn't exist as of now. I am working on it! :)`,
-			});
-		}
-		return;
-	},
-};
+			return;
+		};
+	}
+}

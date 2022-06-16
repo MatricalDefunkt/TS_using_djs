@@ -1,76 +1,91 @@
 /** @format */
 
 import { Client, CommandInteraction, MessageEmbed } from "discord.js";
-import { PrefixClient, SubCommand } from "../../Types/interface.js";
+import {
+	BasicCommandTypes,
+	PrefixClient,
+	SubCommand,
+} from "../../Types/interface.js";
 import { Infraction } from "../../Utils/Infraction";
 import { rules } from "../../Utils/rules.json";
 
-export const BanPermanant: SubCommand = {
-	name: "permanant",
-	description: "Permanantly bans a user from the guild",
-	parentName: "ban",
-	execute: async (client: PrefixClient, interaction: CommandInteraction) => {
-		if (!interaction.inCachedGuild()) return;
-		const bannee = interaction.options.getMember("user", true);
-		let _reason = interaction.options.getInteger("reason", true);
-		const time = interaction.options.getInteger("msg-history", true);
+export class BanPermanant implements SubCommand {
+	name: string;
+	description: string;
+	infractionEmbed: any;
+	parentName: string;
+	commandType: BasicCommandTypes;
+	execute: SubCommand["execute"];
 
-		const customReason = interaction.options.getString("custom-reason");
+	constructor() {
+		this.name = "permanant";
+		this.description = "Permanantly bans a user from the guild";
+		this.parentName = "ban";
+		this.infractionEmbed = null;
+		this.commandType = "infraction";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		) => {
+			if (!interaction.inCachedGuild()) return;
+			const bannee = interaction.options.getMember("user", true);
+			let _reason = interaction.options.getInteger("reason", true);
+			const time = interaction.options.getInteger("msg-history", true);
 
-		if (!bannee)
-			return interaction.editReply({
-				content: `The person you want to ban is not a member of this discord server.`,
-			});
+			const customReason = interaction.options.getString("custom-reason");
 
-		if (bannee.bannable == false) {
-			return interaction.editReply({
-				content: `I cannot ban ${bannee}. They're too powerful 🤯!!`,
-			});
-		} else if (interaction.member === bannee) {
-			return interaction.editReply({
-				content: `Okay, you have been banned. Now move on.`,
-			});
-		}
+			if (!bannee)
+				return interaction.editReply({
+					content: `The person you want to ban is not a member of this discord server.`,
+				});
 
-		let reason: { id: number; reason: string; rule: string };
+			if (bannee.bannable == false) {
+				return interaction.editReply({
+					content: `I cannot ban ${bannee}. They're too powerful 🤯!!`,
+				});
+			} else if (interaction.member === bannee) {
+				return interaction.editReply({
+					content: `Okay, you have been banned. Now move on.`,
+				});
+			}
 
-		const foundRule = rules.find((rule) => rule.id == _reason);
+			let reason: { id: number; reason: string; rule: string };
 
-		if (_reason === 0) {
-			reason = {
-				id: 0,
-				reason: customReason ? customReason : "None provided.",
-				rule: customReason ? customReason : "None provided.",
-			};
-		} else {
-			reason = foundRule
-				? foundRule
-				: { id: 404, rule: "Not found.", reason: "Not found." };
-		}
+			const foundRule = rules.find((rule) => rule.id == _reason);
 
-		if (reason.id === 404) {
-			console.log(
-				"Rule with id" +
-					_reason +
-					"was not found. Please check rules.json asap."
-			);
-			return interaction.editReply({
-				content: `There was an error. Please contact Matrical ASAP.`,
-			});
-		}
+			if (_reason === 0) {
+				reason = {
+					id: 0,
+					reason: customReason ? customReason : "None provided.",
+					rule: customReason ? customReason : "None provided.",
+				};
+			} else {
+				reason = foundRule
+					? foundRule
+					: { id: 404, rule: "Not found.", reason: "Not found." };
+			}
 
-		const disputable = interaction.options.getBoolean("disputable");
-		let disputableReply;
+			if (reason.id === 404) {
+				console.log(
+					"Rule with id" +
+						_reason +
+						"was not found. Please check rules.json asap."
+				);
+				return interaction.editReply({
+					content: `There was an error. Please contact Matrical ASAP.`,
+				});
+			}
 
-		if (disputable === false) {
-			disputableReply = `Since this ban has been set as non-disputable, you may not dispute it, as it is now final.`;
-		} else {
-			disputableReply = `Since this ban has been set as disputable, you may join [this](https://discord.gg/UEwR4CUrug) server and dispute the ban there.`;
-		}
+			const disputable = interaction.options.getBoolean("disputable");
+			let disputableReply;
 
-		if (!client.user) return;
+			if (disputable === false) {
+				disputableReply = `Since this ban has been set as non-disputable, you may not dispute it, as it is now final.`;
+			} else {
+				disputableReply = `Since this ban has been set as disputable, you may join [this](https://discord.gg/UEwR4CUrug) server and dispute the ban there.`;
+			}
 
-		try {
+			if (!client.user) return;
 			const dmChannel = await bannee.createDM(true);
 			dmChannel
 				.send({
@@ -122,7 +137,12 @@ export const BanPermanant: SubCommand = {
 									content: `There was an error. Please contact Matrical ASAP`,
 								});
 							}
-							if (!client.user) return;
+							embed.addField("Disputable:", `${disputable ?? `true`}`);
+							client.emit("loggerCreate", {
+								embed,
+								interaction,
+								type: "infraction",
+							});
 							await interaction.editReply({ embeds: [embed] });
 						})
 						.catch((rejectedReason) => {
@@ -131,53 +151,54 @@ export const BanPermanant: SubCommand = {
 							});
 							console.log(rejectedReason);
 						});
-				});
-		} catch (e: any) {
-			if (e.code === 50007) {
-				await interaction.editReply({
-					content: `Cannot send messages to ${bannee}\nBanning now...`,
-				});
-				await bannee
-					.ban({ days: time, reason: `${reason.rule}` })
-					.then(async () => {
+				})
+				.catch(async (e: any) => {
+					if (e.code === 50007) {
 						await interaction.editReply({
-							content: `${bannee} has been banned.`,
+							content: `Cannot send messages to ${bannee}\nBanning now...`,
 						});
-						const infraction = new Infraction();
-						await infraction.addInfraction({
-							modID: interaction.user.id,
-							target: bannee.user.id,
-							reason: reason.reason,
-							type: "Ban",
-						});
-						if (infraction instanceof Error || !infraction.latestInfraction)
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP.`,
+						await bannee
+							.ban({ days: time, reason: `${reason.rule}` })
+							.then(async () => {
+								await interaction.editReply({
+									content: `${bannee} has been banned.`,
+								});
+								const infraction = new Infraction();
+								await infraction.addInfraction({
+									modID: interaction.user.id,
+									target: bannee.user.id,
+									reason: reason.reason,
+									type: "Ban",
+								});
+								const embed = infraction.getInfractionEmbed({
+									message: false,
+								});
+								if (!embed) {
+									console.log(
+										"Could not make an embed with case ID. Please check."
+									);
+									return interaction.editReply({
+										content: `There was an error. Please contact Matrical ASAP`,
+									});
+								}
+								embed.addField("Disputable:", `${disputable ?? `true`}`);
+								client.emit("loggerCreate", {
+									embed,
+									interaction,
+									type: "infraction",
+								});
+								await interaction.editReply({ embeds: [embed] });
+							})
+							.catch((rejectedReason) => {
+								interaction.editReply({
+									content: `Something went wrong. Please contact Matrical ASAP.`,
+								});
+								console.log(rejectedReason);
 							});
-						const embed = infraction.getInfractionEmbed({
-							message: false,
-						});
-						if (!embed) {
-							console.log(
-								"Could not make an embed with case ID. Please check."
-							);
-							return interaction.editReply({
-								content: `There was an error. Please contact Matrical ASAP`,
-							});
-						}
-						if (!client.user) return;
-						embed.setColor("RED");
-						await interaction.editReply({ embeds: [embed] });
-					})
-					.catch((rejectedReason) => {
-						interaction.editReply({
-							content: `Something went wrong. Please contact Matrical ASAP.`,
-						});
-						console.log(rejectedReason);
-					});
-			} else {
-				console.error(e);
-			}
-		}
-	},
-};
+					} else {
+						console.error(e);
+					}
+				});
+		};
+	}
+}

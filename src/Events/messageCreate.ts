@@ -9,21 +9,7 @@ import { Client, Message } from "discord.js";
 
 export const messageCreate: Event = {
 	name: "messageCreate",
-	handle: async (client: PrefixClient | Client) => {
-		function isPrefixClient(
-			client: PrefixClient | Client
-		): client is PrefixClient {
-			if (client instanceof PrefixClientClass) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-		if (!isPrefixClient(client))
-			throw new TypeError(
-				"Expected type of client as PrefixClient. Got Client"
-			);
+	handle: async (client: PrefixClient<true>) => {
 
 		client.on("messageCreate", async (msg: Message): Promise<any> => {
 			const tagprefix = client.prefixes.get("tag");

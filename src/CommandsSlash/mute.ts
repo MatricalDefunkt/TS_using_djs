@@ -1,8 +1,17 @@
 /** @format */
 
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { Client, Collection, CommandInteraction } from "discord.js";
-import { PrefixClient, SubCommand, SubCommandParent } from "../Types/interface";
+import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
+import {
+	Collection,
+	CommandInteraction,
+} from "discord.js";
+import {
+	BasicCommandTypes,
+	PrefixClient,
+	SubCommand,
+	SubCommandParent,
+} from "../Types/interface";
 import { MuteSubCommands } from "./mute/exports";
 
 const subCommands: Collection<string, SubCommand> = new Collection();
@@ -133,35 +142,49 @@ const data = new SlashCommandBuilder()
 	);
 const jsonData = data.toJSON();
 
-export const Mute: SubCommandParent = {
-	name: "mute",
-	description: "Gives a user the muted role",
-	jsonData,
-	children: MuteSubCommands,
-	execute: async (
-		client: PrefixClient,
-		interaction: CommandInteraction
-	): Promise<any> => {
-		await interaction.deferReply({ ephemeral: true });
+export class Mute implements SubCommandParent {
+	name: string;
+	description: string;
+	jsonData: RESTPostAPIApplicationCommandsJSONBody;
+	children: SubCommand[];
+	commandType: BasicCommandTypes;
+	execute: SubCommand["execute"];
 
-		const subCommand = subCommands.get(interaction.options.getSubcommand());
+	constructor() {
+		this.name = "mute";
+		this.description = "Gives a user the muted role";
+		this.jsonData = jsonData;
+		this.children = MuteSubCommands;
+		this.commandType = "infraction";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			await interaction.deferReply({ ephemeral: true });
 
-		if (subCommand) {
-			try {
-				await subCommand.execute(client, interaction);
-				return;
-			} catch (e) {
+			const subCommand = subCommands.get(interaction.options.getSubcommand());
+
+			if (subCommand) {
+				try {
+					await subCommand.execute(client, interaction).catch((error: any) => {
+						interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP.`,
+						});
+						console.log(error);
+					});
+					return;
+				} catch (e) {
+					await interaction.editReply({
+						content: "There was an error. Please contact Matrical ASAP",
+					});
+					console.error(e);
+				}
+			} else {
 				await interaction.editReply({
-					content: "There was an error. Please contact Matrical ASAP",
+					content: `This sub-command doesn't exist as of now. I am working on it! :)`,
 				});
-				console.error(e);
 			}
-		} else {
-			await interaction.editReply({
-				content: `This sub-command doesn't exist as of now. I am working on it! :)`,
-			});
-		}
-
-		return;
-	},
-};
+			return;
+		};
+	}
+}

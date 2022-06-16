@@ -1,83 +1,67 @@
 /** @format */
 
 import { CommandInteraction, MessageEmbed } from "discord.js";
-import { PrefixClient, SubCommand } from "../../Types/interface";
+import {
+	BasicCommandTypes,
+	PrefixClient,
+	SubCommand,
+} from "../../Types/interface";
 import { Infractions } from "../../Database/database";
+import { Infraction } from "../../Utils/Infraction";
 
-export const LogsClear: SubCommand = {
-	name: "clear",
-	description: "Clears the database entry using caseID",
-	jsonData: {},
-	parentName: "logs",
-	execute: async (client: PrefixClient, interaction: CommandInteraction) => {
-		const caseID = interaction.options.getString("caseid", true);
+export class LogsClear implements SubCommand {
+	name: string;
+	description: string;
+	parentName: string;
+	commandType: BasicCommandTypes;
+	execute: SubCommand["execute"];
 
-		const caseToRemove = await Infractions.findOne({
-			where: { caseId: caseID },
-		});
+	constructor() {
+		this.name = "clear";
+		this.description = "Clears the database entry using caseID";
+		this.parentName = "logs";
+		this.commandType = "infraction";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			const caseId = interaction.options.getString("caseid", true);
 
-		if (!caseToRemove)
-			return interaction.editReply({
-				content: `Case with the ID \`${caseID}\` was not found.`,
+			const caseToRemove = await Infractions.findOne({
+				where: { caseId },
 			});
 
-		const caseId = caseToRemove.getDataValue("caseID");
-		const type = caseToRemove.getDataValue("type");
-		const target = `<@${caseToRemove.getDataValue("targetID")}>`;
-		const mod = `<@${caseToRemove.getDataValue("modID")}>`;
-		const reason = caseToRemove.getDataValue("reason");
-		const time = `<t:${Math.trunc(
-			Date.parse(caseToRemove.getDataValue("createdAt")) / 1000
-		)}:F>`;
-		const duration =
-			caseToRemove.getDataValue("duration") === "Completed"
-				? `Completed.`
-				: `<t:${caseToRemove.getDataValue("duration")}:F>`;
+			if (!caseToRemove)
+				return interaction.editReply({
+					content: `Case with the ID \`${caseId}\` was not found.`,
+				});
 
-		const embed = new MessageEmbed().setDescription(
-			`**Case ID** - ${caseId}\n**Type** - ${type}\n**Target** - ${target}\n**Moderator** - ${mod}\n${
-				type == "Note" ? `**Note**` : `**Reason**`
-			} - ${reason}\n**Time** - ${time}${
-				duration != "<t:null:F>" ? `\n**Duration** - ${duration}` : ``
-			}`
-		);
-		embed.setColor(type === "Ban" ? "RED" : "YELLOW");
-
-		if (!embed)
-			return interaction.editReply({
-				content: `There was an error. Please check case ID.`,
-			});
-
-		await caseToRemove.destroy();
-
-		if (client.user) {
-			embed
-				.setAuthor({
-					name: client.user.tag,
-					iconURL: client.user?.displayAvatarURL(),
+			caseToRemove
+				.destroy()
+				.then(async () => {
+					const infraction = new Infraction();
+					const embed = infraction.getInfractionEmbed({
+						customInfraction: caseToRemove,
+					});
+					if (!embed) {
+						interaction.editReply({
+							content: `There was an error. Please contact Matrical ASAP.`,
+						});
+						return console.log("Could not create an embed.");
+					}
+					return interaction.editReply({
+						embeds: [embed],
+						content: `Removed infraction with case ID ${caseToRemove.caseId} for <@${caseToRemove.targetId}>`,
+					});
 				})
-				.setColor("YELLOW");
-			await interaction.editReply({
-				content: `Cleared case with ID \`${caseID}\` for <@${caseToRemove.getDataValue(
-					"targetID"
-				)}>`,
-				embeds: [embed],
-			});
-		} else {
-			embed
-				.setAuthor({
-					name: "PYL Bot#9640",
-					iconURL:
-						"https://cdn.discordapp.com/avatars/954655539546173470/cbead6c4dcc60a58d530f8eaf90de5e6.webp",
-				})
-				.setColor("YELLOW");
-			await interaction.editReply({
-				content: `Cleared case with ID \`${caseID}\` for ${caseToRemove.getDataValue(
-					"targetID"
-				)}>`,
-				embeds: [embed],
-			});
-		}
-		return;
-	},
-};
+				.catch((err) => {
+					console.error(err);
+					return interaction.editReply({
+						content: `There was an error. Please contact Matrical ASAP.`,
+					});
+				});
+
+			return;
+		};
+	}
+}

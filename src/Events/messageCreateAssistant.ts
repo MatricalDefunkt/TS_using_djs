@@ -14,7 +14,7 @@ const assistantChannelId = configs.find(
 
 export const messageCreateAssistant: Event = {
 	name: "messageCreate",
-	handle: async (client: PrefixClient) => {
+	handle: async (client: PrefixClient<true>) => {
 		client.on("messageCreate", async (msg: Message): Promise<any> => {
 			if (!msg.guild) return;
 			if (msg.author.bot) return;
@@ -32,6 +32,12 @@ export const messageCreateAssistant: Event = {
 
 			if (msg.channelId !== assistantChannelId) return;
 
+			if (
+				msg.cleanContent.includes("--noassist") ||
+				msg.cleanContent.includes("-na")
+			)
+				return;
+				
 			const authConfig = {
 				keyFilePath: path.resolve(
 					__dirname,

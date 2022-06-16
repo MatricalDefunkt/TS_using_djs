@@ -1,10 +1,14 @@
 /** @format */
 
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { MessageEmbed, Client, CommandInteraction } from "discord.js";
-import { Infractions } from "../Database/database";
-import { Command, PrefixClient } from "../Types/interface.js";
+import { CommandInteraction, MessageEmbed } from "discord.js";
+import {
+	BasicCommandTypes,
+	Command,
+	PrefixClient,
+} from "../Types/interface.js";
 import { Infraction } from "../Utils/Infraction";
+import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
 
 const data = new SlashCommandBuilder()
 	.setName("note")
@@ -21,40 +25,55 @@ const data = new SlashCommandBuilder()
 
 const jsonData = data.toJSON();
 
-export const Note: Command = {
-	name: "note",
-	description: "Adds a note onto a user and stores it in DB.",
-	jsonData,
-	execute: async (
-		client: PrefixClient,
-		interaction: CommandInteraction
-	): Promise<any> => {
-		if (!interaction.inCachedGuild()) return;
+export class Note implements Command {
+	name: string;
+	description: string;
+	jsonData: RESTPostAPIApplicationCommandsJSONBody;
+	commandType: BasicCommandTypes;
+	execute: Command["execute"];
 
-		await interaction.deferReply({ ephemeral: true });
-		const userForNote = interaction.options.getMember("user", true);
-		const note = interaction.options.getString("note", true);
+	constructor() {
+		this.name = "note";
+		this.description = "Adds a note onto a user and stores it in DB.";
+		this.jsonData = jsonData;
+		this.commandType = "infraction";
+		this.execute = async (
+			client: PrefixClient<true>,
+			interaction: CommandInteraction
+		): Promise<any> => {
+			if (!interaction.inCachedGuild()) return;
 
-		const infraction = new Infraction();
-		await infraction.addInfraction({
-			modID: interaction.user.id,
-			target: userForNote.id,
-			reason: note,
-			type: "Note",
-		});
-		if (infraction instanceof Error || !infraction.latestInfraction)
-			return interaction.editReply({
-				content: `There was an error. Please contact Matrical ASAP.`,
+			await interaction.deferReply({ ephemeral: true });
+			const userForNote = interaction.options.getMember("user", true);
+			const note = interaction.options.getString("note", true);
+
+			const infraction = new Infraction();
+			await infraction.addInfraction({
+				modID: interaction.user.id,
+				target: userForNote.id,
+				reason: note,
+				type: "Note",
+			});
+			if (infraction instanceof Error || !infraction.latestInfraction)
+				return interaction.editReply({
+					content: `There was an error. Please contact Matrical ASAP.`,
+				});
+
+			const embed = infraction.getInfractionEmbed();
+			if (!embed) {
+				console.log("Could not make an embed with case ID. Please check.");
+				return interaction.editReply({
+					content: `There was an error. Please contact Matrical ASAP`,
+				});
+			}
+
+			client.emit("loggerCreate", {
+				embed,
+				interaction,
+				type: "infraction",
 			});
 
-		const embed = infraction.getInfractionEmbed();
-		if (!embed) {
-			console.log("Could not make an embed with case ID. Please check.");
-			return interaction.editReply({
-				content: `There was an error. Please contact Matrical ASAP`,
-			});
-		}
-		if (!client.user) return;
-		await interaction.editReply({ embeds: [embed] });
-	},
-};
+			await interaction.editReply({ embeds: [embed] });
+		};
+	}
+}
